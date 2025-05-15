@@ -197,28 +197,69 @@ export default function CruiseDetailPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const bookingId = `PTID-${Date.now()}`;
-      
-      await setDoc(doc(db, 'bookings', bookingId), {
-        ...formData,
-        cruiseId: cruise?.id,
-        cruiseTitle: cruise?.title,
-        category: cruise?.categoryDetails?.name,
-        createdAt: serverTimestamp(),
-        bookingId,
-        status: 'pending'
-      });
-
-      setFormSubmitted(true);
-      setFormData(prev => ({ ...prev, message: '' }));
-      
-      setTimeout(() => setFormSubmitted(false), 3000);
-    } catch (error) {
-      console.error('Booking submission failed:', error);
+  e.preventDefault();
+  try {
+    const bookingId = `PTID${Date.now()}`;
+    const user = auth.currentUser;
+    
+    if (!user) {
+      throw new Error('User not authenticated');
     }
-  };
+
+    // Fetch user details from 'users' collection
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('uid', '==', user.uid));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      throw new Error('User not found in database');
+    }
+
+    // Get the user document data
+    const userDoc = querySnapshot.docs[0];
+    const userData = userDoc.data();
+
+    // Prepare userDetails map
+    const userDetails = {
+      email: userData.email || user.email || '',
+      name: userData.name || user.displayName || '',
+      phone: userData.phone || '',
+      uid: user.uid,
+      userID: userData.userID || `UID${Date.now()}`
+    };
+
+    // Prepare cruiseDetails map
+    const cruiseDetails = {
+      id: cruise?.id,
+      title: cruise?.title,
+      category: cruise?.categoryDetails?.name,
+      ...cruise // Include all cruise properties
+    };
+
+    // Create the booking document
+    await setDoc(doc(db, 'bookings', bookingId), {
+      bookingId,
+      status: 'captured',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      userDetails,
+      cruiseDetails,
+      // Additional booking information
+      
+      message: formData.message,
+      paymentStatus: 'pending'
+    });
+
+    setFormSubmitted(true);
+    setFormData(prev => ({ ...prev, message: '' }));
+    
+    setTimeout(() => setFormSubmitted(false), 3000);
+
+  } catch (error) {
+    console.error('Booking submission failed:', error);
+    // Optionally show error to user
+  }
+};
 
   if (loading) {
     return (
@@ -275,13 +316,13 @@ export default function CruiseDetailPage() {
             )}
             <p className="text-gray-600 mt-2 max-w-3xl leading-relaxed">{cruise.description}</p>
             <div className="mt-6 relative h-96 w-full">
-              <iframe
+              <Image
                 src={cruise.imageURL}
-                width="100%"
-                height="100%"
+                alt={cruise.title}
+                fill
                 className="object-cover rounded-lg shadow-md"
                 style={{ border: 0 }}
-                allowFullScreen
+                
               />
             </div>
           </div>
@@ -312,16 +353,16 @@ export default function CruiseDetailPage() {
             <>
               <h2 className="mt-8 font-bold text-2xl text-gray-800">Video Of The Cruise</h2>
               <div className="flex justify-start items-center m-10">
-                <iframe
+                <video
                   width="560"
                   height="315"
                   src={cruise.videoURL}
                   title="YouTube video player"
-                  frameBorder="0"
+                  
                   className="rounded-lg shadow-md"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+                  controls
+                
+                ></video>
               </div>
             </>
           )}

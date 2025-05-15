@@ -261,28 +261,63 @@ export default function TourDetailPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const bookingId = `PTID-${Date.now()}`;
-      
-      await setDoc(doc(db, 'bookings', bookingId), {
-        ...formData,
-        tourId: tour?.id,
-        tourTitle: tour?.title,
-        category: tour?.categoryDetails?.name,
-        createdAt: serverTimestamp(),
-        bookingId,
-        status: 'pending'
-      });
+  e.preventDefault();
+  try {
+    const bookingId = `PTID${Date.now()}`;
+    
+    // Get current user details from auth
+    const user = auth.currentUser;
+    
+    // Prepare userDetails map
+   const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('uid', '==', user.uid));
+    const querySnapshot = await getDocs(q);
 
-      setFormSubmitted(true);
-      setFormData(prev => ({ ...prev, message: '' }));
-      
-      setTimeout(() => setFormSubmitted(false), 3000);
-    } catch (error) {
-      console.error('Booking submission failed:', error);
+    if (querySnapshot.empty) {
+      throw new Error('User not found in database');
     }
-  };
+
+    // Get the user document data
+    const userDoc = querySnapshot.docs[0];
+    const userData = userDoc.data();
+
+    // Prepare userDetails map
+    const userDetails = {
+      email: userData.email || user.email || '',
+      name: userData.name || user.displayName || '',
+      phone: userData.phone || '',
+      uid: user.uid,
+      userID: userData.userID || `UID${Date.now()}`
+    };
+
+    // Prepare tourDetails map
+    const tourDetails = {
+      id: tour?.id,
+      title: tour?.title,
+      category: tour?.categoryDetails?.name,
+      // Include any other relevant tour details here
+      ...tour // Spread all tour properties if you want everything
+    };
+
+    await setDoc(doc(db, 'bookings', bookingId), {
+      bookingId,
+      status: 'captured', // Changed from 'pending' to 'captured'
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(), // Added updatedAt
+      userDetails, // Added as a map
+      tourDetails, // Added as a map
+      // Include any other form data that doesn't belong in userDetails or tourDetails
+      message: formData.message
+    });
+
+    setFormSubmitted(true);
+    setFormData(prev => ({ ...prev, message: '' }));
+    
+    setTimeout(() => setFormSubmitted(false), 3000);
+  } catch (error) {
+    console.error('Booking submission failed:', error);
+  }
+};
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -334,13 +369,14 @@ export default function TourDetailPage() {
           )}
           <p className='text-gray-600 mt-2 max-w-3xl leading-relaxed'>{tour.description}</p>
           <div className="mt-6 relative h-96 w-full">
-            <iframe
+            <Image
               src={tour.imageURL}
-              width="100%"
-              height="100%"
               className="object-cover rounded-lg shadow-md"
               style={{ border: 0 }}
-              allowFullScreen
+              alt={tour.title}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority
             />
           </div>
         </div>

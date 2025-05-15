@@ -10,7 +10,7 @@ interface Ticket {
   id: string;
   helpdeskID: string;
   category: string;
-  status: 'Opened' | 'Resolved' | 'Reopened' | 'Closed' | 'PendingClosure';
+  status: 'opened' | 'resolved' | 'reopened' | 'closed' | 'pendingclosure';
   createdAt: any;
   resolvedAt?: any;
   updatedAt?: any;
@@ -88,7 +88,7 @@ const HelpDeskPage = () => {
   useEffect(() => {
     if (user) {
       fetchTickets();
-      const interval = setInterval(() => checkPendingClosures(), 60000); // Check every minute
+      const interval = setInterval(() => checkPendingClosures(), 60000);
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -140,7 +140,7 @@ const HelpDeskPage = () => {
           id: doc.id,
           helpdeskID: data.helpdeskID,
           category: data.category,
-          status: data.status || 'Opened',
+          status: data.status || 'opened',
           createdAt: data.createdAt,
           resolvedAt: data.resolvedAt,
           updatedAt: data.updatedAt,
@@ -179,7 +179,7 @@ const HelpDeskPage = () => {
       
       const q = query(
         collection(db, 'helpdesk'),
-        where('status', '==', 'Resolved'),
+        where('status', '==', 'resolved'),
         where('resolvedAt', '<=', threeDaysAgo)
       );
 
@@ -190,7 +190,7 @@ const HelpDeskPage = () => {
         const ticketRef = doc.ref;
         batchUpdates.push(
           updateDoc(ticketRef, {
-            status: 'Closed',
+            status: 'closed',
             updatedAt: serverTimestamp(),
             responses: {
               ...doc.data().responses,
@@ -205,7 +205,7 @@ const HelpDeskPage = () => {
 
       await Promise.all(batchUpdates);
       if (batchUpdates.length > 0) {
-        await fetchTickets(); // Refresh tickets if any were closed
+        await fetchTickets();
       }
     } catch (error) {
       console.error('Error checking pending closures:', error);
@@ -217,8 +217,9 @@ const HelpDeskPage = () => {
     return `HID${timestamp.slice(-8)}`;
   };
 
-  
- 
+  const formatStatusDisplay = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
 
   const showModal = () => {
     setIsModalOpen(true);
@@ -282,14 +283,14 @@ const HelpDeskPage = () => {
     try {
       const ticketId = generateTicketID();
       let fetchedUserID = "";
-       const usersQuery = query(
-    collection(db, "users"),
-    where("uid", "==", user.uid)
-  );
-  const usersSnapshot = await getDocs(usersQuery);
-  if (!usersSnapshot.empty) {
-    fetchedUserID = usersSnapshot.docs[0].data().userID;
-  }
+      const usersQuery = query(
+        collection(db, "users"),
+        where("uid", "==", user.uid)
+      );
+      const usersSnapshot = await getDocs(usersQuery);
+      if (!usersSnapshot.empty) {
+        fetchedUserID = usersSnapshot.docs[0].data().userID;
+      }
       const ticketRef = doc(db, 'helpdesk', ticketId);
       
       const ticketData = {
@@ -303,7 +304,7 @@ const HelpDeskPage = () => {
             response: description
           }
         },
-        status: "Opened",
+        status: "opened",
         updatedAt: serverTimestamp(),
         userDetails: {
           name: user.displayName || '',
@@ -338,7 +339,7 @@ const HelpDeskPage = () => {
       const ticketRef = doc(db, 'helpdesk', ticketId);
       
       await updateDoc(ticketRef, {
-        status: "Reopened",
+        status: "reopened",
         updatedAt: serverTimestamp(),
         responses: {
           ...tickets.find(t => t.id === ticketId)?.responses,
@@ -365,11 +366,11 @@ const HelpDeskPage = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Opened': return 'bg-blue-100 text-blue-800';
-      case 'Resolved': return 'bg-green-100 text-green-800';
-      case 'Reopened': return 'bg-orange-100 text-orange-800';
-      case 'Closed': return 'bg-red-100 text-red-800';
-      case 'PendingClosure': return 'bg-yellow-100 text-yellow-800';
+      case 'opened': return 'bg-blue-100 text-blue-800';
+      case 'resolved': return 'bg-green-100 text-green-800';
+      case 'reopened': return 'bg-orange-100 text-orange-800';
+      case 'closed': return 'bg-red-100 text-red-800';
+      case 'pendingclosure': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -488,9 +489,9 @@ const HelpDeskPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
-                          {ticket.status}
+                          {formatStatusDisplay(ticket.status)}
                         </span>
-                        {ticket.status === 'Resolved' && ticket.resolvedAt && (
+                        {ticket.status === 'resolved' && ticket.resolvedAt && (
                           <span className="ml-2 text-xs text-gray-500">
                             {getTimeRemaining(ticket.resolvedAt)}
                           </span>
@@ -505,7 +506,7 @@ const HelpDeskPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        {(ticket.status === 'Resolved' || ticket.status === 'Closed') && (
+                        {(ticket.status === 'resolved' || ticket.status === 'closed') && (
                           <button
                             onClick={() => handleReopenTicket(ticket.id)}
                             className="text-indigo-600 hover:text-indigo-900"
@@ -587,23 +588,23 @@ const HelpDeskPage = () => {
                   Attachment (Optional)
                 </label>
                 <FirebaseFileUploader
-  storagePath="helpdesk-attachments"  // Custom storage path in Firebase
-  accept=".pdf,.doc,.docx,.jpg,.png"  // Specific file types
-  maxSizeMB={15}  // 15MB file size limit
-  disabled={false}  // Enable/disable the uploader
-  onUploadStart={() => console.log('Upload started')}
-  onUploadSuccess={(url, type) => {
-    console.log('Upload success! URL:', url);
-    console.log('File type:', type);
-    // Update your state or database here
-  }}
-  onUploadError={(error) => {
-    console.error('Upload failed:', error);
-    // Show error message to user
-  }}
-/>
+                  storagePath="helpdesk-attachments"
+                  accept=".pdf,.doc,.docx,.jpg,.png"
+                  maxSizeMB={15}
+                  disabled={false}
+                  onUploadStart={() => console.log('Upload started')}
+                  onUploadSuccess={(url, type) => {
+                    console.log('Upload success! URL:', url);
+                    console.log('File type:', type);
+                    handleUploadSuccess(url);
+                  }}
+                  onUploadError={(error) => {
+                    console.error('Upload failed:', error);
+                    handleUploadError(error);
+                  }}
+                />
                 <p className="mt-1 text-xs text-gray-500">
-                  Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 5MB)
+                  Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 15MB)
                 </p>
               </div>
 
@@ -660,7 +661,7 @@ const HelpDeskPage = () => {
                   <h3 className="text-sm font-medium text-gray-500">Status</h3>
                   <p className="mt-1">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(selectedTicket.status)}`}>
-                      {selectedTicket.status}
+                      {formatStatusDisplay(selectedTicket.status)}
                     </span>
                   </p>
                 </div>
@@ -751,7 +752,7 @@ const HelpDeskPage = () => {
               )}
 
               <div className="flex justify-end">
-                {(selectedTicket.status === 'Resolved' || selectedTicket.status === 'Closed') && (
+                {(selectedTicket.status === 'resolved' || selectedTicket.status === 'closed') && (
                   <button
                     onClick={() => {
                       closeTicketDetails();

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { db } from '@/app/lib/firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc ,getDoc, serverTimestamp , where , collection , query , getDocs } from 'firebase/firestore';
 import { FirebaseFileUploader } from '@/components/FirebaseFileUploader';
 import MobileNumberInput from '@/components/PhoneInput';
 
@@ -46,37 +46,50 @@ export default function ContactPage() {
   });
 
   // Handle authentication state
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user);
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            setUserData(data);
-            setForm({
-              name: data.name || user.displayName || '',
-              email: user.email || '',
-              phone: data.phone || '',
-              message: '',
-              subject: 'General Inquiry',
-              attachmentURL: '',
-              userID: data.userID // Store the custom userID
-            });
-          }
-        } catch (error) {
-          console.error('Failed to load user data:', error);
-        }
-      } else {
-      
-      }
-      setLoading(prev => ({ ...prev, auth: false }));
-    });
+useEffect(() => {
+  const auth = getAuth();
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      setUser(user);
+      try {
+        // First query to find the document where uid matches auth user's uid
+        const usersQuery = query(
+          collection(db, "users"),
+          where("uid", "==", user.uid)
+        );
+        const usersSnapshot = await getDocs(usersQuery);
+        
+        if (!usersSnapshot.empty) {
+          // Get the user document data
+          const userDoc = usersSnapshot.docs[0];
+          const data = userDoc.data();
+          const fetchedUserID = data.userID; // Get the custom userID from document
+          console.log("Fetched userID:", fetchedUserID);
+          setUserData(data);
+          setForm({
+            name: data.name || user.displayName || '',
+            email: user.email || '',
+            phone: data.phone || '',
+            message: '',
+            subject: 'General Inquiry',
+            attachmentURL: '',
+            userID: fetchedUserID // Use the fetched custom userID
+          });
 
-    return () => unsubscribe();
-  }, [router]);
+       
+          
+        } else {
+          console.log("No user document found matching this auth user");
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+      }
+    }
+    setLoading(prev => ({ ...prev, auth: false }));
+  });
+
+  return () => unsubscribe();
+}, [router]);
 
   // Clear notifications after 5 seconds
   useEffect(() => {
@@ -88,7 +101,9 @@ export default function ContactPage() {
     }
   }, [notification]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
@@ -113,69 +128,65 @@ export default function ContactPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!user) {
-      setNotification({
-        message: 'Please sign in to submit a ticket',
-        type: 'error'
-      });
-      return;
-    }
+  if (loading.upload) {
+    setNotification({
+      message: 'Please wait for file upload to complete',
+      type: 'error'
+    });
+    return;
+  }
 
-    if (loading.upload) {
-      setNotification({
-        message: 'Please wait for file upload to complete',
-        type: 'error'
-      });
-      return;
-    }
+  if (!form.name || !form.email || !form.message) {
+    setNotification({
+      message: 'Please fill in all required fields',
+      type: 'error'
+    });
+    return;
+  }
 
-    if (!form.name || !form.email || !form.message) {
-      setNotification({
-        message: 'Please fill in all required fields',
-        type: 'error'
-      });
-      return;
-    }
+  setLoading(prev => ({ ...prev, submit: true }));
 
-    setLoading(prev => ({ ...prev, submit: true }));
+  try {
+    const queryId = `QID${Date.now().toString().slice(-6)}`;
+    const queryData: QueryData = {
+      ...form,
+      userId: user?.uid || '', // Authenticated user's UID if available
+      userID: userData?.userID || '', // Custom userID from users collection if available
+      queryID: queryId,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
 
-    try {
-      const queryId = `QID${Date.now().toString().slice(-6)}`;
-      const queryData: QueryData = {
-        ...form,
-        userId: user.uid,
-        userID: userData?.userID || '', // Your custom userID
-        queryID: queryId,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
+    await setDoc(doc(db, 'queries', queryId), queryData);
 
-      await setDoc(doc(db, 'queries', queryId), queryData);
+    // Reset the form after a successful submission.
+    setForm({
+      name: user ? (userData?.name || user.displayName || '') : '',
+      email: user ? (user.email || '') : '',
+      phone: userData?.phone || '',
+      message: '',
+      subject: 'General Inquiry',
+      attachmentURL: '',
+      userID: userData?.userID || ''
+    });
 
-      setForm(prev => ({
-        ...prev,
-        message: '',
-        subject: 'General Inquiry',
-        attachmentURL: ''
-      }));
-
-      setNotification({
-        message: 'Ticket submitted successfully!',
-        type: 'success'
-      });
-    } catch (error) {
-      console.error('Submission failed:', error);
-      setNotification({
-        message: 'Failed to submit ticket. Please try again.',
-        type: 'error'
-      });
-    } finally {
-      setLoading(prev => ({ ...prev, submit: false }));
-    }
-  };
+    setNotification({
+      message: 'Ticket submitted successfully!',
+      type: 'success'
+    });
+  } catch (error) {
+    console.error('Submission failed:', error);
+    setNotification({
+      message: 'Failed to submit ticket. Please try again.',
+      type: 'error'
+    });
+  } finally {
+    setLoading(prev => ({ ...prev, submit: false }));
+  }
+};
 
   if (loading.auth) {
     return (
@@ -185,14 +196,7 @@ export default function ContactPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Redirecting to signup...</p>
-      </div>
-    );
-  }
-
+  // Removed forced sign in UI – the form now renders regardless of auth status
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center">
       <div className="container mx-auto px-4">
@@ -260,22 +264,15 @@ export default function ContactPage() {
 
             <div>
               <label className="block mb-2">Attachment</label>
-             <FirebaseFileUploader
-  storagePath="queries"  // Custom storage path in Firebase
-  accept=".pdf,.doc,.docx,.jpg,.png"  // Specific file types
-  maxSizeMB={15}  // 15MB file size limit
-  disabled={false}  // Enable/disable the uploader
-  onUploadStart={() => console.log('Upload started')}
-  onUploadSuccess={(url, type) => {
-    console.log('Upload success! URL:', url);
-    console.log('File type:', type);
-    // Update your state or database here
-  }}
-  onUploadError={(error) => {
-    console.error('Upload failed:', error);
-    // Show error message to user
-  }}
-/>
+              <FirebaseFileUploader
+                storagePath="queries"
+                accept=".pdf,.doc,.docx,.jpg,.png"
+                maxSizeMB={15}
+                disabled={false}
+                onUploadStart={handleUploadStart}
+                onUploadSuccess={handleUploadSuccess}
+                onUploadError={handleUploadError}
+              />
             </div>
 
             <div>

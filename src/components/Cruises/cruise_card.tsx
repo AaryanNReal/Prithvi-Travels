@@ -73,7 +73,8 @@ const CruiseCard: React.FC<CruiseCardProps> = ({
       `}>
         {/* Image with badges */}
         <div className="relative h-64 w-full">
-          <iframe
+          <Image
+            alt={title}
             src={imageURL}
          
             width={600}

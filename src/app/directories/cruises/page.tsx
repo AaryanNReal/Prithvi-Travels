@@ -9,6 +9,9 @@ interface Cruise {
   title: string;
   cruiseType: 'domestic' | 'international';
   slug: string;
+  category: {
+    slug: string;
+  };
 }
 
 const CruisesPage = () => {
@@ -33,7 +36,10 @@ const CruisesPage = () => {
             id: doc.id,
             title: data.title,
             cruiseType: data.cruiseType,
-            slug: data.slug
+            slug: data.slug,
+            category: {
+              slug: data.categoryDetails.slug || 'uncategorized' // Fallback for missing category
+            }
           });
         });
 
@@ -124,7 +130,7 @@ const CruisesPage = () => {
                 {filteredCruises.map(cruise => (
                   <Link 
                     key={cruise.id} 
-                    href={`/cruises/${cruise.slug}`}
+                    href={`/cruises/${cruise.category.slug}/${cruise.slug}`}
                     className="inline-flex items-center px-4 py-2 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
                   >
                     <span className="font-medium">{cruise.title}</span>

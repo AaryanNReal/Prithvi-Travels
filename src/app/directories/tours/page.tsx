@@ -9,6 +9,9 @@ interface Tour {
   title: string;
   tourType: 'domestic' | 'international';
   slug: string;
+   category: {
+    slug: string;
+  };
 }
 
 const ToursPage = () => {
@@ -33,10 +36,13 @@ const ToursPage = () => {
             id: doc.id,
             title: data.title,
             tourType: data.tourType,
-            slug: data.slug
+            slug: data.slug,
+            category: {
+              slug: data.categoryDetails?.slug  // Fallback for missing category
+            }
           });
         });
-
+        console.log("slug",toursData[0].category.slug);
         setTours(toursData);
         setLoading(false);
       } catch (err) {
@@ -129,7 +135,7 @@ const ToursPage = () => {
                 {filteredTours.map(tour => (
                   <Link 
                     key={tour.id} 
-                    href={`/tours/${tour.slug}`}
+                    href={`/tours/${tour.category.slug}/${tour.slug}`}
                     className="block border rounded-lg p-4 hover:shadow-lg transition-shadow"
                   >
                     <div className="flex justify-between items-start mb-2">

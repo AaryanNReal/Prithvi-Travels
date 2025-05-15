@@ -38,7 +38,7 @@ const BlogTitlesPage = () => {
             }
           });
         });
-
+        
         setBlogs(blogsData);
         setLoading(false);
       } catch (err) {

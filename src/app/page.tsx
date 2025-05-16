@@ -1,4 +1,5 @@
 import AboutSectionOne from "@/components/About/AboutSectionOne";
+"use client";
 import AboutSectionTwo from "@/components/About/AboutSectionTwo";
 import Blog from "@/components/Blog";
 import Brands from "@/components/Brands";
@@ -14,18 +15,22 @@ import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
 import { Metadata } from "next";
 import { useMetadata } from "./hooks/MetaDta";
-export const metadata: Metadata = {
-  title: "Prithvi Travels",
-  description: "",
-  keywords: "travel, tours, prithvi travels, travel agency",
-  authors: [{ name: "Prithvi Travels" }],
-  creator: "Prithvi Travels",
-  publisher: "Prithvi Travels",
-  
-};
+
 
 export default function Home() {
   
+ useMetadata({
+ title: "Travel Agency",  
+  description: "Travel Agency",
+  image: {
+    url: "/images/logo/logo.png",
+    width: 1200,
+    height: 630,
+    alt: "Travel Agency",
+  },
+  canonicalUrl: "https://www.example.com",
+  keywords: "travel, agency, booking",
+});
   
   return (
     <>

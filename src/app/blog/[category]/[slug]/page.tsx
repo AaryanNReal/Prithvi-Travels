@@ -80,6 +80,18 @@ export default function BlogPostPage() {
     fetchBlogPost();
   }, [categorySlug, titleSlug]);
 
+  useMetadata({
+    title: blog?.title || 'Blog Post',
+    description: blog?.summary || 'Read this blog post',
+    image: {
+      url: blog?.image?.imageURL || '/default-image.jpg',
+      width: 1200,
+      height: 630,
+      alt: blog?.image?.altText || blog?.title || 'Blog Post',
+    },
+    canonicalUrl: `https://myblog.com/blog/${categorySlug}/${titleSlug}`,
+    keywords: blog?.tags ? Object.values(blog.tags).map((tag: any) => tag.name).join(', ') : '',
+  });
   
   if (loading) return (
     <div className="flex justify-center items-center min-h-screen">

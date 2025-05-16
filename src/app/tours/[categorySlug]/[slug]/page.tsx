@@ -278,6 +278,19 @@ export default function TourDetailPage() {
   }
 };
 
+useMetadata({   
+  title: `${tour?.title} - Tour Details`,
+  description: tour?.description || 'Tour details page',
+  image: {
+    url: tour?.imageURL || '/images/logo/logo.png',
+    width: 1200,
+    height: 630,
+    alt: tour?.title || 'Tour Image',
+  },
+
+  keywords: tour?.tags ? Object.values(tour.tags).map(tag => tag.name).join(', ') : '',
+});
+
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">

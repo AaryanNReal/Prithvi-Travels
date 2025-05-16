@@ -1,4 +1,4 @@
-
+// hooks/useMetadata.ts
 import { useEffect } from 'react';
 
 type ImageMetadata = {

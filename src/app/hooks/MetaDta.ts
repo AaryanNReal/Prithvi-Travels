@@ -1,6 +1,4 @@
 // hooks/useMetadata.ts
-'use client';
-
 import { useEffect } from 'react';
 
 type ImageMetadata = {

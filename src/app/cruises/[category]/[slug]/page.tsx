@@ -238,6 +238,23 @@ export default function CruiseDetailPage() {
       console.error('Booking submission failed:', error);
     }
   };
+  useMetadata({
+    title: cruise?.title,
+    description: cruise?.description,
+    openGraph: {
+      title: cruise?.title,
+      description: cruise?.description,
+      images: [
+        {
+          url: cruise?.imageURL,
+          width: 800,
+          height: 600
+        }
+      ]
+    },
+  
+    
+  });
 
   
 

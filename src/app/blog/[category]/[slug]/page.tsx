@@ -83,13 +83,26 @@ export default function BlogPostPage() {
   useMetadata({
     title: blog?.title || 'Blog Post',
     description: blog?.summary || 'Read this blog post',
+    openGraph: {
+      title: blog?.title || 'Blog Post',
+      description: blog?.summary || 'Read this blog post',
+      type: 'article',
+      url: `${categorySlug}/${titleSlug}`,
+      siteName: 'My Blog',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      site: '@MyBlog',
+      title: blog?.title || 'Blog Post',
+      description: blog?.summary || 'Read this blog post',
+    },
     image: {
       url: blog?.image?.imageURL || '/default-image.jpg',
       width: 1200,
       height: 630,
       alt: blog?.image?.altText || blog?.title || 'Blog Post',
     },
-    canonicalUrl: `https://myblog.com/blog/${categorySlug}/${titleSlug}`,
+    canonicalUrl: `${categorySlug}/${titleSlug}`,
     keywords: blog?.tags ? Object.values(blog.tags).map((tag: any) => tag.name).join(', ') : '',
   });
   

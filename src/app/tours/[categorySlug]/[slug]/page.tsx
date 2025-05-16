@@ -287,6 +287,18 @@ useMetadata({
     height: 630,
     alt: tour?.title || 'Tour Image',
   },
+  canonicalUrl: `${slug}`,
+  openGraph: {
+    type: 'website',
+    siteName: 'Prithvi Travels',
+    publishedTime: tour?.startDate || new Date().toISOString(),
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@PrithviTravels',
+  },
+  
+
 
   keywords: tour?.tags ? Object.values(tour.tags).map(tag => tag.name).join(', ') : '',
 });

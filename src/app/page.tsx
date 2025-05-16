@@ -19,17 +19,25 @@ import { useMetadata } from "./hooks/MetaDta";
 
 export default function Home() {
   
- useMetadata({
- title: "Travel Agency",  
-  description: "Travel Agency",
+useMetadata({
+  title: "Prithvi Travels - Top Travel Destinations for 2024",
+  description: "Discover the top places to visit this year with Prithvi Travels.",
   image: {
-    url: "/images/logo/logo.png",
+    url: "/images/logo/logo.png",  // Will auto-convert to absolute URL
     width: 1200,
     height: 630,
-    alt: "Travel Agency",
+    alt: "Travel destinations collage",
   },
-  canonicalUrl: "https://www.example.com",
-  keywords: "travel, agency, booking",
+  canonicalUrl: "https://prithvi-travels-36eo.vercel.app/blog/top-destinations-2024",
+  openGraph: {
+    type: "article",
+    siteName: "Prithvi Travels",
+    publishedTime: "2024-05-20T00:00:00Z",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@PrithviTravels",
+  },
 });
   
   return (

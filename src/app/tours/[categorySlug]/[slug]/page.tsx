@@ -14,6 +14,7 @@ import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Head from 'next/head';
+import { useMetadata } from '@/app/hooks/MetaDta';
 interface ItineraryDay {
   title: string;
   description: string;
@@ -277,6 +278,14 @@ export default function TourDetailPage() {
   }
 };
 
+useMetadata ({
+  title: tour?.title,
+  description: tour?.description,
+  image: tour?.imageURL,
+  
+  keywords: tour?.tags ? Object.values(tour.tags).map(tag => tag.name).join(', ') : ''  
+}); 
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
@@ -304,6 +313,8 @@ export default function TourDetailPage() {
   });
 
   const tagKeys = tour.tags ? Object.keys(tour.tags) : [];
+
+
 
   return (
     <>

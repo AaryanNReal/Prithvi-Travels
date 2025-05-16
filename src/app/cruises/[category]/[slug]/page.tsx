@@ -10,7 +10,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { CalendarIcon, MapPinIcon, CurrencyDollarIcon, TagIcon, UserIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import MobileNumberInput from '@/components/PhoneInput';
-
+import { useMetadata } from '@/app/hooks/MetaDta';
 interface Cruise {
   id: string;
   title: string;
@@ -52,6 +52,8 @@ interface FormData {
 }
 
 export default function CruiseDetailPage() {
+
+
   const params = useParams();
   const router = useRouter();
   
@@ -236,6 +238,25 @@ export default function CruiseDetailPage() {
       console.error('Booking submission failed:', error);
     }
   };
+
+   useMetadata({
+    title: cruise ? `${cruise.title} | Cruise Package` : 'Loading Cruise...',
+    description: cruise?.description || 'Discover amazing cruise packages',
+    keywords: 'cruise, travel, vacation, package, booking',
+    canonicalUrl: cruise ? `https://yourwebsite.com/cruises/${cruise.slug}` : undefined,
+    openGraph: {
+      title: cruise?.title,
+      description: cruise?.description,
+      images: cruise?.imageURL ? [{ url: cruise.imageURL }] : undefined,
+      url: cruise ? `https://yourwebsite.com/cruises/${cruise.slug}` : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: cruise?.title,
+      description: cruise?.description,
+      images: cruise?.imageURL ? [{ url: cruise.imageURL }] : undefined,
+    }
+  });
 
   if (loading) {
     return (

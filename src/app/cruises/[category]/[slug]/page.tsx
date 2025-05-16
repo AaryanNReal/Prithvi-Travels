@@ -239,24 +239,7 @@ export default function CruiseDetailPage() {
     }
   };
 
-   useMetadata({
-    title: cruise ? `${cruise.title} | Cruise Package` : 'Loading Cruise...',
-    description: cruise?.description || 'Discover amazing cruise packages',
-    keywords: 'cruise, travel, vacation, package, booking',
-    canonicalUrl: cruise ? `https://yourwebsite.com/cruises/${cruise.slug}` : undefined,
-    openGraph: {
-      title: cruise?.title,
-      description: cruise?.description,
-      images: cruise?.imageURL ? [{ url: cruise.imageURL }] : undefined,
-      url: cruise ? `https://yourwebsite.com/cruises/${cruise.slug}` : undefined,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: cruise?.title,
-      description: cruise?.description,
-      images: cruise?.imageURL ? [{ url: cruise.imageURL }] : undefined,
-    }
-  });
+  
 
   if (loading) {
     return (

@@ -25,37 +25,8 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  useMetadata({
-    title: "Prithvi Travels",     
-    description: "Prithvi Travels is a travel agency that offers a wide range of travel services, including domestic and international tours, cruises, and more.",
-    keywords: "travel, tours, prithvi travels, travel agency",
-    
-    
-   
-    image: "/images/logo.png",
   
-    twitter: {
-      card: "summary_large_image",
-      site: "@prithvitravels",
-      creator: "@prithvitravels",
-    },
-    openGraph: {
-      title: "Prithvi Travels",
-      description: "Prithvi Travels is a travel agency that offers a wide range of travel services, including domestic and international tours, cruises, and more.",
-      url: "https://prithvitravels.com",
-      siteName: "Prithvi Travels",
-      images: [
-        {
-          url: "/images/logo.png",
-          width: 800,
-          height: 600,
-          alt: "Prithvi Travels Logo",
-        },
-      ],
-      locale: "en_US",
-      type: "website",
-    },
-  });
+  
   return (
     <>
       <ScrollUp />

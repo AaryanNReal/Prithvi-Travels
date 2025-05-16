@@ -278,13 +278,6 @@ export default function TourDetailPage() {
   }
 };
 
-useMetadata ({
-  title: tour?.title,
-  description: tour?.description,
-  image: tour?.imageURL,
-  
-  keywords: tour?.tags ? Object.values(tour.tags).map(tag => tag.name).join(', ') : ''  
-}); 
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">

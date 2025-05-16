@@ -80,12 +80,7 @@ export default function BlogPostPage() {
     fetchBlogPost();
   }, [categorySlug, titleSlug]);
 
-  useMetadata({
-    title: blog?.title || 'Loading...',
-    description: blog?.summary || 'Loading...',
-    image: blog?.image?.imageURL || '/default-image.jpg',
-    keywords: blog?.tags ? Object.values(blog.tags).map((tag: any) => tag.name).join(', ') : '',
-  });
+  
   if (loading) return (
     <div className="flex justify-center items-center min-h-screen">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

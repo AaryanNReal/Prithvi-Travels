@@ -3,6 +3,13 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
 import CruiseCard from '@/components/Cruises/cruise_card';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 interface Cruise {
   id: string;
@@ -28,7 +35,6 @@ const FeaturedCruisesPage = () => {
   const [featuredCruises, setFeaturedCruises] = useState<Cruise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     const fetchFeaturedCruises = async () => {
@@ -75,21 +81,6 @@ const FeaturedCruisesPage = () => {
     fetchFeaturedCruises();
   }, []);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => 
-      Math.min(prev + 1, Math.ceil(featuredCruises.length / 3) - 1)
-    );
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => Math.max(prev - 1, 0));
-  };
-
-  const getVisibleCruises = () => {
-    const startIndex = currentSlide * 3;
-    return featuredCruises.slice(startIndex, startIndex + 3);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -130,12 +121,32 @@ const FeaturedCruisesPage = () => {
             </p>
           </div>
         ) : (
-          <div className="relative">
-            <div className="overflow-hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 transition-transform duration-300">
-                {getVisibleCruises().map((cruise) => (
+          <div className="relative px-4 sm:px-6 lg:px-8">
+            <Swiper
+              modules={[Navigation, Pagination]}
+              spaceBetween={30}
+              slidesPerView={1}
+              navigation
+              pagination={{ clickable: true }}
+              breakpoints={{
+                640: {
+                  slidesPerView: 1,
+                  spaceBetween: 20,
+                },
+                768: {
+                  slidesPerView: 2,
+                  spaceBetween: 30,
+                },
+                1024: {
+                  slidesPerView: 3,
+                  spaceBetween: 30,
+                },
+              }}
+              className="py-8"
+            >
+              {featuredCruises.map((cruise) => (
+                <SwiperSlide key={cruise.id} className="pb-12">
                   <CruiseCard
-                    key={cruise.id}
                     id={cruise.id}
                     title={cruise.title}
                     slug={cruise.slug}
@@ -151,30 +162,9 @@ const FeaturedCruisesPage = () => {
                     location={cruise.location}
                     cruiseType={cruise.cruiseType}
                   />
-                ))}
-              </div>
-            </div>
-
-            {featuredCruises.length > 3 && (
-              <div className="flex justify-center mt-8 space-x-4">
-                <button
-                  onClick={prevSlide}
-                  disabled={currentSlide === 0}
-                  className={`px-4 py-2 rounded-md ${currentSlide === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={nextSlide}
-                  disabled={currentSlide >= Math.ceil(featuredCruises.length / 3) - 1}
-                  className={`px-4 py-2 rounded-md ${currentSlide >= Math.ceil(featuredCruises.length / 3) - 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                >
-                  Next
-                </button>
-              </div>
-            )}
-
-            
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
         )}
       </div>

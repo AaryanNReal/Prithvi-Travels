@@ -3,13 +3,17 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { db, auth } from '@/app/lib/firebase';
-import { collection, getDocs, query, where, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Image from 'next/image';
 import { CalendarIcon, MapPinIcon, CurrencyRupeeIcon, TagIcon, UserIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import MobileNumberInput from '@/components/PhoneInput';
 import { getAuth } from 'firebase/auth';
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
+import Head from 'next/head';
 interface ItineraryDay {
   title: string;
   description: string;
@@ -20,13 +24,11 @@ interface CategoryDetails {
   categoryID: string;
   name: string;
   slug: string;
-  description?: string;
 }
 
 interface Tag {
   name: string;
   slug: string;
-  description?: string;
 }
 
 interface Tour {
@@ -43,9 +45,6 @@ interface Tour {
   status?: string;
   categoryDetails: CategoryDetails;
   flightIncluded?: boolean;
-  isFeatured?: boolean;
-  isStartDate?: boolean;
-  tourType?: string;
   tags?: Record<string, Tag>;
 }
 
@@ -61,16 +60,15 @@ interface UserData {
   name?: string;
   email?: string;
   phone?: string;
-  userID?: string;
   uid?: string;
+  userID?: string;
 }
 
 interface FormData {
   name: string;
   email: string;
   phone: string;
-  message: string;
-  userID: string;
+  userID?: string;
 }
 
 export default function TourDetailPage() {
@@ -85,16 +83,12 @@ export default function TourDetailPage() {
     name: '',
     email: '',
     phone: '',
-    message: '',
-    userID: ''
+    
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const [loadingUser, setLoadingUser] = useState(true);
-  const [categories, setCategories] = useState<CategoryDetails[]>([]);
 
   const slug = decodeURIComponent(params.slug as string);
 
-  // Enhanced authentication handler
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -102,7 +96,6 @@ export default function TourDetailPage() {
       
       if (currentUser) {
         try {
-          // Query users collection for matching document
           const usersQuery = query(
             collection(db, 'users'),
             where('uid', '==', currentUser.uid)
@@ -118,17 +111,13 @@ export default function TourDetailPage() {
               name: userData.name || currentUser.displayName || '',
               email: currentUser.email || '',
               phone: userData.phone || '',
-              message: '',
-              userID: userData.userID || currentUser.uid
+              userID: userData.userID || "",
             });
           } else {
-            // No user document found
             setFormData({
               name: currentUser.displayName || '',
               email: currentUser.email || '',
-              phone: '',
-              message: '',
-              userID: currentUser.uid
+              phone: ''
             });
           }
         } catch (error) {
@@ -136,35 +125,27 @@ export default function TourDetailPage() {
           setFormData({
             name: currentUser.displayName || '',
             email: currentUser.email || '',
-            phone: '',
-            message: '',
-            userID: currentUser.uid
+            phone: ''
           });
         }
       } else {
-        // User logged out - reset form
         setFormData({
           name: '',
           email: '',
-          phone: '',
-          message: '',
-          userID: ''
+          phone: ''
         });
         setUserData(null);
       }
-      setLoadingUser(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Fetch tour and related data
   useEffect(() => {
     const fetchTourData = async () => {
       try {
         setLoading(true);
         
-        // Fetch main tour
         const toursQuery = query(
           collection(db, 'tours'),
           where('slug', '==', slug)
@@ -189,7 +170,6 @@ export default function TourDetailPage() {
           id: tourDoc.id
         });
 
-        // Fetch related tours
         if (tourData.categoryDetails?.categoryID) {
           const relatedQuery = query(
             collection(db, 'tours'),
@@ -208,7 +188,6 @@ export default function TourDetailPage() {
           setRelatedTours(related);
         }
 
-        // Fetch all categories
         const allTours = await getDocs(collection(db, 'tours'));
         const uniqueCategories = new Map<string, CategoryDetails>();
         allTours.forEach(tourDoc => {
@@ -217,8 +196,7 @@ export default function TourDetailPage() {
             uniqueCategories.set(tour.categoryDetails.categoryID, tour.categoryDetails);
           }
         });
-        setCategories(Array.from(uniqueCategories.values()));
-
+        
       } catch (err) {
         console.error('Error loading tour:', err);
         setError('Failed to load tour details');
@@ -251,7 +229,7 @@ export default function TourDetailPage() {
     }).format(price);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -260,59 +238,39 @@ export default function TourDetailPage() {
     setFormData(prev => ({ ...prev, phone: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   try {
     const bookingId = `PTID${Date.now()}`;
     
-    // Get current user details from auth
-    const user = auth.currentUser;
-    
-    // Prepare userDetails map
-   const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('uid', '==', user.uid));
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      throw new Error('User not found in database');
-    }
-
-    // Get the user document data
-    const userDoc = querySnapshot.docs[0];
-    const userData = userDoc.data();
-
-    // Prepare userDetails map
+    // Ensure we have a valid user ID or guest identifier
+    const userId = user?.uid || `GUEST${Date.now()}`;
+    const userID = userData?.userID || userId;
     const userDetails = {
-      email: userData.email || user.email || '',
-      name: userData.name || user.displayName || '',
-      phone: userData.phone || '',
-      uid: user.uid,
-      userID: userData.userID || `UID${Date.now()}`
+      name: userData?.name || formData.name,
+      email: userData?.email || formData.email,
+      phone: userData?.phone || formData.phone,
+      uid: user?.uid || null,  // Explicitly set to null if no user
+      userID: userID
     };
 
-    // Prepare tourDetails map
     const tourDetails = {
       id: tour?.id,
       title: tour?.title,
       category: tour?.categoryDetails?.name,
-      // Include any other relevant tour details here
-      ...tour // Spread all tour properties if you want everything
+      ...tour
     };
 
     await setDoc(doc(db, 'bookings', bookingId), {
       bookingId,
-      status: 'captured', // Changed from 'pending' to 'captured'
+      status: 'captured',
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(), // Added updatedAt
-      userDetails, // Added as a map
-      tourDetails, // Added as a map
-      // Include any other form data that doesn't belong in userDetails or tourDetails
-      message: formData.message
+      updatedAt: serverTimestamp(),
+      userDetails,
+      tourDetails
     });
 
     setFormSubmitted(true);
-    setFormData(prev => ({ ...prev, message: '' }));
-    
     setTimeout(() => setFormSubmitted(false), 3000);
   } catch (error) {
     console.error('Booking submission failed:', error);
@@ -348,8 +306,18 @@ export default function TourDetailPage() {
   const tagKeys = tour.tags ? Object.keys(tour.tags) : [];
 
   return (
+    <>
+    <Head>
+      <title>{tour.title} - Tour Details</title>
+      <meta name="description" content={tour.description} />
+      <meta property="og:title" content={tour.title} />
+      <meta property="og:description" content={tour.description} />
+      <meta property="og:image" content={tour.imageURL} />
+      <meta property="og:url" content={`https://yourwebsite.com/tours/${slug}`} />
+      <meta property='og:keywords' content={tour.tags ? tagKeys.map(key => tour.tags![key].name).join(', ') : ''} />
+      <link rel="canonical" href={`https://yourwebsite.com/tours/${slug}`} />
+    </Head>
     <div className="flex flex-col mt-24 md:flex-row gap-8 p-4 max-w-7xl mx-auto">
-      {/* Main Content */}
       <div className="md:w-2/3">
         <div className="mt-4">
           <Link href="/tours" className="inline-flex items-center text-blue-600 hover:text-blue-800">
@@ -372,7 +340,6 @@ export default function TourDetailPage() {
             <Image
               src={tour.imageURL}
               className="object-cover rounded-lg shadow-md"
-              style={{ border: 0 }}
               alt={tour.title}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -389,7 +356,7 @@ export default function TourDetailPage() {
               <div className='ml-2'>
                 <p className='text-lg'>{tour.numberofDays} Days / {tour.numberofNights} Nights</p>
                 <p className='text-sm text-gray-500'>
-                  {tour.isStartDate ? `Start: ${formatDate(tour.startDate)}` : 'Flexible dates'}
+                 
                 </p>
               </div>
             </div>
@@ -427,17 +394,50 @@ export default function TourDetailPage() {
                     </p>
                     
                     {day.imageURL && day.imageURL.length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        {day.imageURL.map((img, idx) => (
-                          <div key={idx} className="relative h-48 rounded-md overflow-hidden">
-                            <Image
-                              src={img}
-                              alt={`Day ${dayNumber} Image ${idx + 1}`}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        ))}
+                      <div className="mt-4 relative px-4">
+                        <Slider
+                          dots={true}
+                          infinite={true}
+                          speed={1000}
+                          autoplay={true}
+                          autoplaySpeed={2000}
+                          slidesToShow={2}
+                          slidesToScroll={1}
+                          adaptiveHeight={true}
+                          arrows={true}
+                          className="rounded-md overflow-hidden"
+                          responsive={[
+                            {
+                              breakpoint: 1024,
+                              settings: {
+                                slidesToShow: 2,
+                                slidesToScroll: 1
+                              }
+                            },
+                            {
+                              breakpoint: 768,
+                              settings: {
+                                slidesToShow: 1,
+                                slidesToScroll: 1
+                              }
+                            }
+                          ]}
+                        >
+                          {day.imageURL.map((img, idx) => (
+                            <div key={idx} className="relative h-[400px] w-full px-2">
+                              <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg">
+                                <Image
+                                  src={img}
+                                  alt={`Day ${dayNumber} Image ${idx + 1}`}
+                                  fill
+                                  className="object-cover hover:scale-105 transition-transform duration-300"
+                                  priority={idx === 0}
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </Slider>
                       </div>
                     )}
                   </div>
@@ -473,7 +473,6 @@ export default function TourDetailPage() {
         )}
       </div>
       
-      {/* Sidebar */}
       <div className="md:w-1/3 space-y-6 mt-16">
         <div className="mt-12 bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Request More Information</h2>
@@ -484,20 +483,16 @@ export default function TourDetailPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {loadingUser ? (
-                <div className="flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                </div>
-              ) : user ? (
+              {user ? (
                 <>
                   <div className="flex items-center space-x-4 bg-blue-50 p-4 rounded-lg">
                     <div className="bg-blue-100 p-3 rounded-full">
                       <UserIcon className="h-6 w-6 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800">{formData.name || 'User'}</p>
-                      <p className="text-sm text-gray-600">{formData.email}</p>
-                      {formData.phone && <p className="text-sm text-gray-600">{formData.phone}</p>}
+                      <p className="font-medium text-gray-800">{userData?.name || user.displayName || 'User'}</p>
+                      <p className="text-sm text-gray-600">{userData?.email || user.email}</p>
+                      {userData?.phone && <p className="text-sm text-gray-600">{userData.phone}</p>}
                     </div>
                   </div>
                   
@@ -513,6 +508,7 @@ export default function TourDetailPage() {
                         <MobileNumberInput 
                           value={formData.phone}
                           onChange={handlePhoneChange}
+                          required
                         />
                       </div>
                     </div>
@@ -573,26 +569,12 @@ export default function TourDetailPage() {
                       <MobileNumberInput 
                         value={formData.phone}
                         onChange={handlePhoneChange}
+                        required
                       />
                     </div>
                   </div>
                 </>
               )}
-              
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  rows={4}
-                  value={formData.message}
-                  onChange={handleInputChange}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                  placeholder="Any specific questions or requirements?"
-                ></textarea>
-              </div>
               
               <div>
                 <button
@@ -644,24 +626,8 @@ export default function TourDetailPage() {
             </div>
           </div>
         )}
-        
-        {/* Categories List */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Tour Categories</h3>
-          <ul className="space-y-2">
-            {categories.map((category) => (
-              <li key={category.categoryID}>
-                <Link 
-                  href={`/tours/${category.slug}`} 
-                  className="text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  {category.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     </div>
+    </>
   );
 }

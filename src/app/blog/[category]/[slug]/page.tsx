@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import RelatedPostsSidebar from '@/components/RelatedPostsSidebar';
 import CategoryList from '@/components/CategoryList';
+import Head from 'next/head';
 const calculateReadingTime = (text: string) => {
   const wordsPerMinute = 200;
   const wordCount = text.trim().split(/\s+/).length;
@@ -111,6 +112,19 @@ export default function BlogPostPage() {
   const readTime = calculateReadingTime(blog.content || '');
 
   return (
+   <>
+   <Head>
+      <title>{blog.title} - My Blog</title>
+      <meta name="description" content={blog.summary || 'Read this blog post'} />
+      <meta property="og:title" content={blog.title} />
+      <meta property="og:description" content={blog.summary || 'Read this blog post'} />
+      <meta property="og:image" content={blog.image?.imageURL || '/default-image.jpg'} />
+      <meta property="og:url" content={`https://myblog.com/blog/${categorySlug}/${titleSlug}`} />
+      <meta property='og:keywords' content={blog.tags ? Object.values(blog.tags).map((tag: any) => tag.name).join(', ') : ''} />
+      <link rel="canonical" href={`https://myblog.com/blog/${categorySlug}/${titleSlug}`} />
+
+   </Head>
+
     <div className="max-w-7xl mx-auto px-4 mt-14 sm:px-6 lg:px-8 py-16">
       <div className="flex flex-col lg:flex-row gap-12">
         {/* Main Content */}
@@ -255,5 +269,6 @@ export default function BlogPostPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

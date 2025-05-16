@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { db } from '@/app/lib/firebase';
-import { doc, setDoc ,getDoc, serverTimestamp , where , collection , query , getDocs } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { FirebaseFileUploader } from '@/components/FirebaseFileUploader';
 import MobileNumberInput from '@/components/PhoneInput';
 
@@ -15,11 +15,11 @@ interface QueryData {
   subject: string;
   status: string;
   attachmentURL: string;
-  userID: string;
-  userId: string; // Firebase UID
   queryID: string;
   createdAt: any;
   updatedAt: any;
+  uid?: string;
+  userID?: string;
 }
 
 export default function ContactPage() {
@@ -42,54 +42,73 @@ export default function ContactPage() {
     phone: '',
     subject: 'General Inquiry',
     attachmentURL: '',
-    userID: ''
   });
 
-  // Handle authentication state
-useEffect(() => {
-  const auth = getAuth();
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      setUser(user);
-      try {
-        // First query to find the document where uid matches auth user's uid
-        const usersQuery = query(
-          collection(db, "users"),
-          where("uid", "==", user.uid)
-        );
-        const usersSnapshot = await getDocs(usersQuery);
-        
-        if (!usersSnapshot.empty) {
-          // Get the user document data
-          const userDoc = usersSnapshot.docs[0];
-          const data = userDoc.data();
-          const fetchedUserID = data.userID; // Get the custom userID from document
-          console.log("Fetched userID:", fetchedUserID);
-          setUserData(data);
-          setForm({
-            name: data.name || user.displayName || '',
-            email: user.email || '',
-            phone: data.phone || '',
-            message: '',
-            subject: 'General Inquiry',
-            attachmentURL: '',
-            userID: fetchedUserID // Use the fetched custom userID
-          });
-
-       
+  // Handle authentication state and fetch user data
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(prev => ({ ...prev, auth: true }));
+      
+      if (currentUser) {
+        setUser(currentUser);
+        try {
+          // Query users collection for matching document
+          const usersQuery = query(
+            collection(db, "users"),
+            where("uid", "==", currentUser.uid)
+          );
+          const querySnapshot = await getDocs(usersQuery);
           
-        } else {
-          console.log("No user document found matching this auth user");
+          if (!querySnapshot.empty) {
+            const userDoc = querySnapshot.docs[0];
+            const data = userDoc.data();
+            setUserData(data);
+            
+            // Pre-fill form with user data
+            setForm(prev => ({
+              ...prev,
+              name: data.name || currentUser.displayName || '',
+              email: currentUser.email || '',
+              phone: data.phone || ''
+            }));
+          } else {
+            // No user document found - use auth data
+            setForm(prev => ({
+              ...prev,
+              name: currentUser.displayName || '',
+              email: currentUser.email || '',
+              phone: ''
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          // Fallback to auth data
+          setForm(prev => ({
+            ...prev,
+            name: currentUser.displayName || '',
+            email: currentUser.email || '',
+            phone: ''
+          }));
         }
-      } catch (error) {
-        console.error('Failed to load user data:', error);
+      } else {
+        // User not logged in - reset form
+        setUser(null);
+        setUserData(null);
+        setForm({
+          name: '',
+          email: '',
+          message: '',
+          phone: '',
+          subject: 'General Inquiry',
+          attachmentURL: '',
+        });
       }
-    }
-    setLoading(prev => ({ ...prev, auth: false }));
-  });
+      setLoading(prev => ({ ...prev, auth: false }));
+    });
 
-  return () => unsubscribe();
-}, [router]);
+    return () => unsubscribe();
+  }, [router]);
 
   // Clear notifications after 5 seconds
   useEffect(() => {
@@ -106,6 +125,10 @@ useEffect(() => {
   ) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setForm(prev => ({ ...prev, phone: value }));
   };
 
   const handleUploadStart = () => {
@@ -128,65 +151,70 @@ useEffect(() => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (loading.upload) {
-    setNotification({
-      message: 'Please wait for file upload to complete',
-      type: 'error'
-    });
-    return;
-  }
+    if (loading.upload) {
+      setNotification({
+        message: 'Please wait for file upload to complete',
+        type: 'error'
+      });
+      return;
+    }
 
-  if (!form.name || !form.email || !form.message) {
-    setNotification({
-      message: 'Please fill in all required fields',
-      type: 'error'
-    });
-    return;
-  }
+    if (!form.name || !form.email || !form.message) {
+      setNotification({
+        message: 'Please fill in all required fields',
+        type: 'error'
+      });
+      return;
+    }
 
-  setLoading(prev => ({ ...prev, submit: true }));
+    setLoading(prev => ({ ...prev, submit: true }));
 
-  try {
-    const queryId = `QID${Date.now().toString().slice(-6)}`;
-    const queryData: QueryData = {
-      ...form,
-      userId: user?.uid || '', // Authenticated user's UID if available
-      userID: userData?.userID || '', // Custom userID from users collection if available
-      queryID: queryId,
-      status: 'pending',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
+    try {
+      const queryId = `QID${Date.now().toString().slice(-6)}`;
+      
+      // Prepare query data - prioritize user collection data over form data
+      const queryData: QueryData = {
+        name: userData?.name || form.name,
+        email: userData?.email || form.email,
+        phone: userData?.phone || form.phone,
+        message: form.message,
+        subject: form.subject,
+        attachmentURL: form.attachmentURL,
+        queryID: queryId,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+       
+      };
 
-    await setDoc(doc(db, 'queries', queryId), queryData);
+      await setDoc(doc(db, 'queries', queryId), queryData);
 
-    // Reset the form after a successful submission.
-    setForm({
-      name: user ? (userData?.name || user.displayName || '') : '',
-      email: user ? (user.email || '') : '',
-      phone: userData?.phone || '',
-      message: '',
-      subject: 'General Inquiry',
-      attachmentURL: '',
-      userID: userData?.userID || ''
-    });
+      // Reset form but keep user data if logged in
+      setForm({
+        name: user ? (userData?.name || user.displayName || '') : '',
+        email: user ? (user.email || '') : '',
+        phone: userData?.phone || '',
+        message: '',
+        subject: 'General Inquiry',
+        attachmentURL: '',
+      });
 
-    setNotification({
-      message: 'Ticket submitted successfully!',
-      type: 'success'
-    });
-  } catch (error) {
-    console.error('Submission failed:', error);
-    setNotification({
-      message: 'Failed to submit ticket. Please try again.',
-      type: 'error'
-    });
-  } finally {
-    setLoading(prev => ({ ...prev, submit: false }));
-  }
-};
+      setNotification({
+        message: 'Your query has been submitted successfully!',
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Submission failed:', error);
+      setNotification({
+        message: 'Failed to submit your query. Please try again.',
+        type: 'error'
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, submit: false }));
+    }
+  };
 
   if (loading.auth) {
     return (
@@ -196,27 +224,17 @@ useEffect(() => {
     );
   }
 
-  // Removed forced sign in UI – the form now renders regardless of auth status
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
           <h2 className="text-2xl font-bold text-center mb-6">Contact Support</h2>
           
-          {notification.message && (
-            <div className={`mb-6 p-4 rounded-md ${
-              notification.type === 'success' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
-              {notification.message}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block mb-2">Name</label>
+                <label className="block mb-2">Name *</label>
                 <input
                   type="text"
                   name="name"
@@ -228,7 +246,7 @@ useEffect(() => {
               </div>
               
               <div>
-                <label className="block mb-2">Email</label>
+                <label className="block mb-2">Email *</label>
                 <input
                   type="email"
                   name="email"
@@ -240,10 +258,11 @@ useEffect(() => {
               </div>
 
               <div>
-                <label className="block mb-2">Phone</label>
+                <label className="block mb-2">Phone *</label>
                 <MobileNumberInput
                   value={form.phone}
-                  onChange={(value) => setForm(prev => ({ ...prev, phone: value }))}
+                  onChange={handlePhoneChange}
+                  required
                 />
               </div>
 
@@ -276,7 +295,7 @@ useEffect(() => {
             </div>
 
             <div>
-              <label className="block mb-2">Message</label>
+              <label className="block mb-2">Message *</label>
               <textarea
                 name="message"
                 value={form.message}
@@ -286,13 +305,18 @@ useEffect(() => {
                 className="w-full p-3 border rounded"
               />
             </div>
+            {notification.message && (
+              <div className={`p-4 mb-4 text-sm ${notification.type === 'error' ? 'text-red-700 bg-red-100' : 'text-green-700 bg-green-100'} rounded`}>
+                {notification.message}
+              </div>
+            )}
 
             <button
               type="submit"
               disabled={loading.submit || loading.upload}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded hover:bg-blue-700 disabled:opacity-70"
             >
-              {loading.submit ? 'Submitting...' : 'Submit Ticket'}
+              {loading.submit ? 'Submitting...' : 'Submit Query'}
             </button>
           </form>
         </div>

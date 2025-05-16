@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/app/lib/firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp, query, orderBy, where, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, serverTimestamp, query, orderBy, where, updateDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { FirebaseFileUploader } from '@/components/FirebaseFileUploader';
@@ -46,97 +46,94 @@ interface Ticket {
 }
 
 const HelpDeskPage = () => {
+  // State management
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({
+    initial: true,
+    refresh: false,
+    submit: false,
+  });
   const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authInitialized, setAuthInitialized] = useState(false);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [showError, setShowError] = useState(false);
+  const [notifications, setNotifications] = useState<{
+    success: { show: boolean; message: string };
+    error: { show: boolean; message: string };
+  }>({
+    success: { show: false, message: '' },
+    error: { show: false, message: '' },
+  });
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const router = useRouter();
 
   // Form state
-  const [category, setCategory] = useState('Account Related');
-  const [description, setDescription] = useState('');
-  const [errors, setErrors] = useState({
-    category: '',
+  const [form, setForm] = useState({
+    category: 'Account Related',
     description: '',
-    form: ''
+    errors: {
+      category: '',
+      description: '',
+      form: '',
+    },
+    isSubmitted: false,
   });
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Check auth state
+  // Auth state management
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+        if (currentUser.uid) {
+          await fetchTickets(currentUser.uid);
+        }
       } else {
         router.push('/signup');
       }
-      setAuthLoading(false);
+      setAuthInitialized(true);
+      setLoading(prev => ({ ...prev, initial: false }));
     });
 
     return () => unsubscribe();
   }, [router]);
 
-  // Fetch tickets and check for pending closures
+  // Check for pending closures every minute
   useEffect(() => {
-    if (user) {
-      fetchTickets();
-      const interval = setInterval(() => checkPendingClosures(), 60000);
-      return () => clearInterval(interval);
-    }
-  }, [user]);
+    if (!user?.uid) return;
 
-  // Validate form
+    const interval = setInterval(() => {
+      checkPendingClosures(user.uid);
+    }, 60000);
+
+    // Initial check
+    checkPendingClosures(user.uid);
+
+    return () => clearInterval(interval);
+  }, [user?.uid]);
+
+  // Form validation
   useEffect(() => {
-    if (isSubmitted) {
+    if (form.isSubmitted) {
       validateForm();
     }
-  }, [category, description, isSubmitted]);
+  }, [form.category, form.description, form.isSubmitted]);
 
-  const validateForm = () => {
-    const newErrors = {
-      category: '',
-      description: '',
-      form: ''
-    };
-
-    if (!category) {
-      newErrors.category = 'Category is required';
-    }
-
-    if (!description) {
-      newErrors.description = 'Description is required';
-    } else if (description.length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
-    } else if (description.length > 1000) {
-      newErrors.description = 'Description must be less than 1000 characters';
-    }
-
-    setErrors(newErrors);
-    return !newErrors.category && !newErrors.description;
-  };
-
-  const fetchTickets = async () => {
-    setLoading(true);
+  // Data fetching
+  const fetchTickets = useCallback(async (userId: string) => {
     try {
+      setLoading(prev => ({ ...prev, refresh: true }));
+      
       const q = query(
         collection(db, 'helpdesk'),
-        where('userDetails.uid', '==', user?.uid),
+        where('userDetails.uid', '==', userId),
         orderBy('createdAt', 'desc')
       );
-      const querySnapshot = await getDocs(q);
       
-      const ticketList: Ticket[] = [];
-      querySnapshot.forEach((doc) => {
+      const querySnapshot = await getDocs(q);
+      const ticketList = querySnapshot.docs.map(doc => {
         const data = doc.data();
-        ticketList.push({
+        return {
           id: doc.id,
           helpdeskID: data.helpdeskID,
           category: data.category,
@@ -155,153 +152,106 @@ const HelpDeskPage = () => {
             name: '',
             email: '',
             phone: '',
-            uid: '',
+            uid: userId,
             userID: ''
           }
-        });
+        };
       });
       
       setTickets(ticketList);
     } catch (error) {
-      console.error('Error fetching tickets: ', error);
-      setErrorMessage('Failed to fetch tickets');
-      setShowError(true);
-      setTimeout(() => setShowError(false), 5000);
+      console.error('Error fetching tickets:', error);
+      showNotification('error', 'Failed to fetch tickets');
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, refresh: false }));
     }
-  };
+  }, []);
 
-  const checkPendingClosures = async () => {
+  const handleRefresh = useCallback(async () => {
+    if (!user?.uid) return;
+    await fetchTickets(user.uid);
+  }, [user?.uid, fetchTickets]);
+
+  const checkPendingClosures = useCallback(async (userId: string) => {
     try {
       const now = new Date();
       const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
       
       const q = query(
         collection(db, 'helpdesk'),
+        where('userDetails.uid', '==', userId),
         where('status', '==', 'resolved'),
         where('resolvedAt', '<=', threeDaysAgo)
       );
 
       const querySnapshot = await getDocs(q);
-      const batchUpdates: Promise<void>[] = [];
-
-      querySnapshot.forEach((doc) => {
-        const ticketRef = doc.ref;
-        batchUpdates.push(
-          updateDoc(ticketRef, {
-            status: 'closed',
-            updatedAt: serverTimestamp(),
-            responses: {
-              ...doc.data().responses,
-              closed: {
-                response: 'Ticket automatically closed after 3 days of resolution',
-                createdAt: serverTimestamp()
-              }
+      const batchUpdates = querySnapshot.docs.map(doc => {
+        return updateDoc(doc.ref, {
+          status: 'closed',
+          updatedAt: serverTimestamp(),
+          responses: {
+            ...doc.data().responses,
+            closed: {
+              response: 'Ticket automatically closed after 3 days of resolution',
+              createdAt: serverTimestamp()
             }
-          })
-        );
+          }
+        });
       });
 
       await Promise.all(batchUpdates);
       if (batchUpdates.length > 0) {
-        await fetchTickets();
+        await fetchTickets(userId);
       }
     } catch (error) {
       console.error('Error checking pending closures:', error);
     }
-  };
+  }, [fetchTickets]);
 
-  const generateTicketID = () => {
-    const timestamp = Date.now().toString();
-    return `HID${timestamp.slice(-8)}`;
-  };
-
-  const formatStatusDisplay = (status: string) => {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
-
-  const showModal = () => {
-    setIsModalOpen(true);
-    setIsSubmitted(false);
-    setErrors({
-      category: '',
-      description: '',
+  // Form handling
+  const validateForm = useCallback(() => {
+    const newErrors = {
+      category: !form.category ? 'Category is required' : '',
+      description: !form.description ? 'Description is required' : 
+        form.description.length < 10 ? 'Description must be at least 10 characters' :
+        form.description.length > 1000 ? 'Description must be less than 1000 characters' : '',
       form: ''
-    });
-  };
+    };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setCategory('Account Related');
-    setDescription('');
-    setAttachmentUrl(null);
-    setIsSubmitted(false);
-    setErrors({
-      category: '',
-      description: '',
-      form: ''
-    });
-  };
+    setForm(prev => ({ ...prev, errors: newErrors }));
+    return !newErrors.category && !newErrors.description;
+  }, [form.category, form.description]);
 
-  const showTicketDetails = (ticket: Ticket) => {
-    setSelectedTicket(ticket);
-  };
-
-  const closeTicketDetails = () => {
-    setSelectedTicket(null);
-  };
-
-  const handleUploadSuccess = (url: string) => {
-    setAttachmentUrl(url);
-  };
-
-  const handleUploadError = (error: Error) => {
-    console.error('Upload failed:', error);
-    setErrorMessage('File upload failed. Please try again.');
-    setShowError(true);
-    setTimeout(() => setShowError(false), 5000);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    setForm(prev => ({ ...prev, isSubmitted: true }));
 
-    if (!user) {
-      setErrorMessage('You must be logged in to submit a ticket');
-      setShowError(true);
-      setTimeout(() => setShowError(false), 5000);
+    if (!user?.uid) {
+      showNotification('error', 'You must be logged in to submit a ticket');
       return;
     }
 
-    const isValid = validateForm();
-    if (!isValid) {
-      return;
-    }
+    if (!validateForm()) return;
 
-    setLoading(true);
     try {
+      setLoading(prev => ({ ...prev, submit: true }));
+      
       const ticketId = generateTicketID();
-      let fetchedUserID = "";
-      const usersQuery = query(
-        collection(db, "users"),
-        where("uid", "==", user.uid)
-      );
+      const usersQuery = query(collection(db, "users"), where("uid", "==", user.uid));
       const usersSnapshot = await getDocs(usersQuery);
-      if (!usersSnapshot.empty) {
-        fetchedUserID = usersSnapshot.docs[0].data().userID;
-      }
+      
+      const userData = usersSnapshot.docs[0]?.data() || {};
       const ticketRef = doc(db, 'helpdesk', ticketId);
       
-      const ticketData = {
-        category: category,
+      await setDoc(ticketRef, {
+        category: form.category,
         createdAt: serverTimestamp(),
         helpdeskID: ticketId,
         responses: {
           opened: {
             attachmentURL: attachmentUrl || "",
             createdAt: serverTimestamp(),
-            response: description
+            response: form.description
           }
         },
         status: "opened",
@@ -309,59 +259,41 @@ const HelpDeskPage = () => {
         userDetails: {
           name: user.displayName || '',
           email: user.email || '',
-          phone: user.phoneNumber || '',
+          phone: userData.phone || '',
           uid: user.uid,
-          userID: fetchedUserID
-        }
-      };
-
-      await setDoc(ticketRef, ticketData);
-      setSuccessMessage('Ticket created successfully!');
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 5000);
-      closeModal();
-      await fetchTickets();
-    } catch (error) {
-      console.error('Error creating ticket: ', error);
-      setErrorMessage('Failed to create ticket. Please try again.');
-      setShowError(true);
-      setTimeout(() => setShowError(false), 5000);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReopenTicket = async (ticketId: string) => {
-    if (!window.confirm('Are you sure you want to reopen this ticket?')) return;
-    
-    setLoading(true);
-    try {
-      const ticketRef = doc(db, 'helpdesk', ticketId);
-      
-      await updateDoc(ticketRef, {
-        status: "reopened",
-        updatedAt: serverTimestamp(),
-        responses: {
-          ...tickets.find(t => t.id === ticketId)?.responses,
-          reopened: {
-            response: "Ticket reopened by user",
-            createdAt: serverTimestamp()
-          }
+          userID: userData.userID || ''
         }
       });
 
-      setSuccessMessage('Ticket reopened successfully!');
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 5000);
-      await fetchTickets();
+      showNotification('success', 'Ticket created successfully!');
+      closeModal();
+      await fetchTickets(user.uid);
     } catch (error) {
-      console.error('Error reopening ticket: ', error);
-      setErrorMessage('Failed to reopen ticket');
-      setShowError(true);
-      setTimeout(() => setShowError(false), 5000);
+      console.error('Error creating ticket:', error);
+      showNotification('error', 'Failed to create ticket. Please try again.');
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, submit: false }));
     }
+  }, [user, form, attachmentUrl, validateForm, fetchTickets]);
+
+  // Helper functions
+  const generateTicketID = () => `HID${Date.now().toString().slice(-8)}`;
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotifications({
+      ...notifications,
+      [type]: { show: true, message }
+    });
+    setTimeout(() => {
+      setNotifications(prev => ({
+        ...prev,
+        [type]: { ...prev[type], show: false }
+      }));
+    }, 5000);
+  };
+
+  const formatStatusDisplay = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   const getStatusColor = (status: string) => {
@@ -376,7 +308,7 @@ const HelpDeskPage = () => {
   };
 
   const getTimeRemaining = (resolvedAt: any) => {
-    if (!resolvedAt) return '';
+    if (!resolvedAt?.toDate) return '';
     const resolvedDate = resolvedAt.toDate();
     const closureDate = new Date(resolvedDate.getTime() + 3 * 24 * 60 * 60 * 1000);
     const now = new Date();
@@ -391,14 +323,84 @@ const HelpDeskPage = () => {
   };
 
   const formatDate = (date: any) => {
-    if (!date) return 'N/A';
-    if (date.toDate) {
-      return date.toDate().toLocaleString();
-    }
-    return date;
+    if (!date?.toDate) return 'N/A';
+    return date.toDate().toLocaleString();
   };
 
-  if (authLoading) {
+  const canReopenTicket = (ticket: Ticket) => {
+    if (ticket.status !== 'resolved') return false;
+    if (!ticket.resolvedAt?.toDate) return false;
+    
+    const resolvedDate = ticket.resolvedAt.toDate();
+    const threeDaysLater = new Date(resolvedDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+    return new Date() < threeDaysLater;
+  };
+
+  // UI handlers
+  const showModal = () => {
+    setIsModalOpen(true);
+    setForm(prev => ({ ...prev, isSubmitted: false, errors: { category: '', description: '', form: '' } }));
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setForm({
+      category: 'Account Related',
+      description: '',
+      errors: { category: '', description: '', form: '' },
+      isSubmitted: false
+    });
+    setAttachmentUrl(null);
+  };
+
+  const showTicketDetails = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+  };
+
+  const closeTicketDetails = () => {
+    setSelectedTicket(null);
+  };
+
+  const handleReopenTicket = useCallback(async (ticketId: string) => {
+    if (!window.confirm('Are you sure you want to reopen this ticket?') || !user?.uid) return;
+    
+    try {
+      setLoading(prev => ({ ...prev, refresh: true }));
+      const ticketRef = doc(db, 'helpdesk', ticketId);
+      
+      await updateDoc(ticketRef, {
+        status: "reopened",
+        updatedAt: serverTimestamp(),
+        responses: {
+          ...tickets.find(t => t.id === ticketId)?.responses,
+          reopened: {
+            response: "Ticket reopened by user",
+            createdAt: serverTimestamp()
+          }
+        }
+      });
+
+      showNotification('success', 'Ticket reopened successfully!');
+      await fetchTickets(user.uid);
+    } catch (error) {
+      console.error('Error reopening ticket:', error);
+      showNotification('error', 'Failed to reopen ticket');
+    } finally {
+      setLoading(prev => ({ ...prev, refresh: false }));
+    }
+  }, [user?.uid, tickets, fetchTickets]);
+
+  const handleUploadSuccess = (url: string) => {
+    setAttachmentUrl(url);
+  };
+
+  const handleUploadError = (error: Error) => {
+    console.error('Upload failed:', error);
+    showNotification('error', 'File upload failed. Please try again.');
+  };
+
+  // Render logic
+  if (!authInitialized || loading.initial) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -416,44 +418,62 @@ const HelpDeskPage = () => {
 
   return (
     <div className="container mx-auto mt-34 px-4 py-8 max-w-7xl">
-      {/* Success Message */}
-      {showSuccess && (
+      {/* Notifications */}
+      {notifications.success.show && (
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-green-500 text-white px-6 py-4 rounded-md shadow-lg flex items-center">
             <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
             </svg>
-            <span>{successMessage}</span>
+            <span>{notifications.success.message}</span>
           </div>
         </div>
       )}
 
-      {/* Error Message */}
-      {showError && (
+      {notifications.error.show && (
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-red-500 text-white px-6 py-4 rounded-md shadow-lg flex items-center">
             <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
-            <span>{errorMessage}</span>
+            <span>{notifications.error.message}</span>
           </div>
         </div>
       )}
 
+      {/* Main Content */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">My Help Desk Tickets</h1>
-          <button
-            onClick={showModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
-            Add Ticket
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleRefresh}
+              disabled={loading.refresh}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md flex items-center"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className={`h-5 w-5 mr-1 ${loading.refresh ? 'animate-spin' : ''}`} 
+                viewBox="0 0 20 20" 
+                fill="currentColor"
+              >
+                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+              </svg>
+              {loading.refresh ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <button
+              onClick={showModal}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+              Add Ticket
+            </button>
+          </div>
         </div>
 
+        {/* Tickets Table */}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -467,15 +487,7 @@ const HelpDeskPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                    </div>
-                  </td>
-                </tr>
-              ) : tickets.length === 0 ? (
+              {tickets.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                     No tickets found
@@ -499,14 +511,14 @@ const HelpDeskPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                      {ticket.createdAt?.toDate ? ticket.createdAt.toDate().toLocaleString() : 'N/A'}
+                      {formatDate(ticket.createdAt)}
                     </td>
                     <td className="px-6 py-4 text-gray-500 max-w-xs truncate">
                       {ticket.responses.opened.response}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        {(ticket.status === 'resolved' || ticket.status === 'closed') && (
+                        {canReopenTicket(ticket) && (
                           <button
                             onClick={() => handleReopenTicket(ticket.id)}
                             className="text-indigo-600 hover:text-indigo-900"
@@ -545,9 +557,9 @@ const HelpDeskPage = () => {
                 </label>
                 <select
                   id="category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className={`w-full px-3 py-1 border ${errors.category ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  value={form.category}
+                  onChange={(e) => setForm(prev => ({ ...prev, category: e.target.value }))}
+                  className={`w-full px-3 py-1 border ${form.errors.category ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                   required
                 >
                   <option value="">Select a category</option>
@@ -557,8 +569,8 @@ const HelpDeskPage = () => {
                   <option value="Feature Request">Feature Request</option>
                   <option value="Other">Other</option>
                 </select>
-                {errors.category && (
-                  <p className="mt-1 text-sm text-red-600">{errors.category}</p>
+                {form.errors.category && (
+                  <p className="mt-1 text-sm text-red-600">{form.errors.category}</p>
                 )}
               </div>
 
@@ -569,17 +581,17 @@ const HelpDeskPage = () => {
                 <textarea
                   id="description"
                   rows={4}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className={`w-full px-3 py-2 border ${errors.description ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                  value={form.description}
+                  onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                  className={`w-full px-3 py-2 border ${form.errors.description ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                   placeholder="Describe your issue in detail (minimum 10 characters)"
                   required
                 />
-                {errors.description && (
-                  <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+                {form.errors.description && (
+                  <p className="mt-1 text-sm text-red-600">{form.errors.description}</p>
                 )}
                 <div className="text-right text-xs text-gray-500 mt-1">
-                  {description.length}/1000 characters
+                  {form.description.length}/1000 characters
                 </div>
               </div>
 
@@ -593,24 +605,17 @@ const HelpDeskPage = () => {
                   maxSizeMB={15}
                   disabled={false}
                   onUploadStart={() => console.log('Upload started')}
-                  onUploadSuccess={(url, type) => {
-                    console.log('Upload success! URL:', url);
-                    console.log('File type:', type);
-                    handleUploadSuccess(url);
-                  }}
-                  onUploadError={(error) => {
-                    console.error('Upload failed:', error);
-                    handleUploadError(error);
-                  }}
+                  onUploadSuccess={handleUploadSuccess}
+                  onUploadError={handleUploadError}
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 15MB)
                 </p>
               </div>
 
-              {errors.form && (
+              {form.errors.form && (
                 <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">
-                  {errors.form}
+                  {form.errors.form}
                 </div>
               )}
 
@@ -624,10 +629,10 @@ const HelpDeskPage = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className={`px-4 py-2 rounded-md text-white ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+                  disabled={loading.submit}
+                  className={`px-4 py-2 rounded-md text-white ${loading.submit ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                 >
-                  {loading ? 'Submitting...' : 'Submit Ticket'}
+                  {loading.submit ? 'Submitting...' : 'Submit Ticket'}
                 </button>
               </div>
             </form>
@@ -635,7 +640,7 @@ const HelpDeskPage = () => {
         </div>
       )}
 
-      {/* Ticket Details Overlay */}
+      {/* Ticket Details Modal */}
       {selectedTicket && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -687,6 +692,7 @@ const HelpDeskPage = () => {
                 )}
               </div>
 
+              {/* Ticket Responses */}
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-gray-500">Initial Message</h3>
                 <div className="mt-1 p-3 bg-gray-50 rounded-md">
@@ -752,7 +758,7 @@ const HelpDeskPage = () => {
               )}
 
               <div className="flex justify-end">
-                {(selectedTicket.status === 'resolved' || selectedTicket.status === 'closed') && (
+                {canReopenTicket(selectedTicket) && (
                   <button
                     onClick={() => {
                       closeTicketDetails();

@@ -41,6 +41,7 @@ interface UserData {
   email?: string;
   phone?: string;
   userID?: string;
+  uid?: string;
 }
 
 interface FormData {
@@ -48,7 +49,6 @@ interface FormData {
   email: string;
   phone: string;
   message: string;
-  userID: string;
 }
 
 export default function CruiseDetailPage() {
@@ -62,24 +62,23 @@ export default function CruiseDetailPage() {
     name: '',
     email: '',
     phone: '',
-    message: '',
-    userID: ''
+    message: ''
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const [loadingUser, setLoadingUser] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   const slug = decodeURIComponent(params.slug as string);
 
-  // Enhanced auth state handler with query-based user data fetching
+  // Auth state handler with users collection lookup
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {
         try {
-          // Query users collection where uid matches auth user
+          // Query users collection for matching document
           const usersQuery = query(
             collection(db, 'users'),
             where('uid', '==', currentUser.uid)
@@ -91,41 +90,39 @@ export default function CruiseDetailPage() {
             const data = userDoc.data() as UserData;
             setUserData(data);
             
+            // Pre-fill form with user data from users collection
             setFormData({
               name: data.name || currentUser.displayName || '',
-              email: currentUser.email || '',
+              email: data.email || currentUser.email || '',
               phone: data.phone || '',
-              message: '',
-              userID: data.userID || currentUser.uid
+              message: ''
             });
           } else {
-            // No matching document found
+            // No user document found - use auth user data
             setFormData({
               name: currentUser.displayName || '',
               email: currentUser.email || '',
               phone: '',
-              message: '',
-              userID: currentUser.uid
+              message: ''
             });
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
+          // Fallback to auth user data if query fails
           setFormData({
             name: currentUser.displayName || '',
             email: currentUser.email || '',
             phone: '',
-            message: '',
-            userID: currentUser.uid
+            message: ''
           });
         }
       } else {
-        // User logged out - reset form
+        // User not logged in - keep form empty
         setFormData({
           name: '',
           email: '',
           phone: '',
-          message: '',
-          userID: ''
+          message: ''
         });
         setUserData(null);
       }
@@ -197,69 +194,48 @@ export default function CruiseDetailPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    const bookingId = `PTID${Date.now()}`;
-    const user = auth.currentUser;
-    
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    // Fetch user details from 'users' collection
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('uid', '==', user.uid));
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      throw new Error('User not found in database');
-    }
-
-    // Get the user document data
-    const userDoc = querySnapshot.docs[0];
-    const userData = userDoc.data();
-
-    // Prepare userDetails map
-    const userDetails = {
-      email: userData.email || user.email || '',
-      name: userData.name || user.displayName || '',
-      phone: userData.phone || '',
-      uid: user.uid,
-      userID: userData.userID || `UID${Date.now()}`
-    };
-
-    // Prepare cruiseDetails map
-    const cruiseDetails = {
-      id: cruise?.id,
-      title: cruise?.title,
-      category: cruise?.categoryDetails?.name,
-      ...cruise // Include all cruise properties
-    };
-
-    // Create the booking document
-    await setDoc(doc(db, 'bookings', bookingId), {
-      bookingId,
-      status: 'captured',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      userDetails,
-      cruiseDetails,
-      // Additional booking information
+    e.preventDefault();
+    try {
+      const bookingId = `PTID${Date.now()}`;
       
-      message: formData.message,
-      paymentStatus: 'pending'
-    });
+      // Prepare userDetails - use data from users collection if available, otherwise form data
+      const userDetails = {
+        name: userData?.name || formData.name,
+        email: userData?.email || formData.email,
+        phone: userData?.phone || formData.phone,
+        uid: user?.uid || null,
+        userID: userData?.userID || user?.uid || `GUEST${Date.now()}`
+      };
 
-    setFormSubmitted(true);
-    setFormData(prev => ({ ...prev, message: '' }));
-    
-    setTimeout(() => setFormSubmitted(false), 3000);
+      // Prepare cruiseDetails
+      const cruiseDetails = {
+        id: cruise?.id,
+        title: cruise?.title,
+        category: cruise?.categoryDetails?.name,
+        ...cruise
+      };
 
-  } catch (error) {
-    console.error('Booking submission failed:', error);
-    // Optionally show error to user
-  }
-};
+      // Create the booking document
+      await setDoc(doc(db, 'bookings', bookingId), {
+        bookingId,
+        status: 'captured',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        userDetails,
+        cruiseDetails,
+        
+        source: user ? (userData ? 'Details' : 'Details') : 'Details',
+      });
+
+      setFormSubmitted(true);
+      setFormData(prev => ({ ...prev, message: '' }));
+      
+      setTimeout(() => setFormSubmitted(false), 3000);
+
+    } catch (error) {
+      console.error('Booking submission failed:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -293,6 +269,15 @@ export default function CruiseDetailPage() {
       <Head>
         <title>{cruise.title} | Cruise Package</title>
         <meta name="description" content={cruise.description} />
+        <meta property="og:title" content={cruise.title} />
+        <meta property="og:description" content={cruise.description} />
+        <meta property="og:image" content={cruise.imageURL} />
+        <meta property="og:url" content={`https://yourwebsite.com/cruises/${cruise.slug}`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={cruise.title} />
+        <meta name="twitter:description" content={cruise.description} />
+        <meta name="twitter:image" content={cruise.imageURL} />
+        <meta property='og:keywords' content='cruise, travel, vacation, package, booking' />
       </Head>
       <div className="flex flex-col md:flex-row mt-24 max-w-7xl mx-auto p-4 gap-8">
         {/* Main Cruise Details */}
@@ -322,7 +307,6 @@ export default function CruiseDetailPage() {
                 fill
                 className="object-cover rounded-lg shadow-md"
                 style={{ border: 0 }}
-                
               />
             </div>
           </div>
@@ -358,10 +342,8 @@ export default function CruiseDetailPage() {
                   height="315"
                   src={cruise.videoURL}
                   title="YouTube video player"
-                  
                   className="rounded-lg shadow-md"
                   controls
-                
                 ></video>
               </div>
             </>
@@ -389,11 +371,13 @@ export default function CruiseDetailPage() {
                         <UserIcon className="h-6 w-6 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-800">{formData.name || 'User'}</p>
-                        <p className="text-sm text-gray-600">{formData.email}</p>
-                        {formData.phone && <p className="text-sm text-gray-600">{formData.phone}</p>}
+                        <p className="font-medium text-gray-800">{userData?.name || user.displayName || 'User'}</p>
+                        <p className="text-sm text-gray-600">{userData?.email || user.email}</p>
+                        {userData?.phone && <p className="text-sm text-gray-600">{userData.phone}</p>}
                       </div>
                     </div>
+                    
+                    {/* Only show phone input if not in userData */}
                     {!userData?.phone && (
                       <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
@@ -406,6 +390,7 @@ export default function CruiseDetailPage() {
                           <MobileNumberInput 
                             value={formData.phone}
                             onChange={handlePhoneChange}
+                            required
                           />
                         </div>
                       </div>
@@ -464,27 +449,15 @@ export default function CruiseDetailPage() {
                         <MobileNumberInput 
                           value={formData.phone}
                           onChange={handlePhoneChange}
+                          required
                         />
                       </div>
                     </div>
                   </>
                 )}
 
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                    Message
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows={4}
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                    placeholder="Any specific questions or requirements?"
-                  ></textarea>
-                </div>
-
+                
+                
                 <div>
                   <button
                     type="submit"

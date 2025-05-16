@@ -17,7 +17,11 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Prithvi Travels",
   description: "",
-  // other metadata
+  keywords: "travel, tours, prithvi travels, travel agency",
+  authors: [{ name: "Prithvi Travels" }],
+  creator: "Prithvi Travels",
+  publisher: "Prithvi Travels",
+  
 };
 
 export default function Home() {

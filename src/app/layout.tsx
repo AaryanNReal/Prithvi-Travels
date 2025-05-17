@@ -45,7 +45,7 @@ export default function RootLayout({
         height: 630,
         alt: "Travel destinations collage",
       }],
-      url: "https://prithvi-travels-36eo.vercel.app" // Explicit URL for OG
+      url: "https://firebasestorage.googleapis.com/v0/b/foodweb-world.firebasestorage.app/o/adminPanel%2Farchive%2Fimages%2Fsubboard.jpg?alt=media&token=d7de14c2-69fa-44a8-a09f-a55a565b362d",
     },
     keywords: "Travel",
     twitter: {

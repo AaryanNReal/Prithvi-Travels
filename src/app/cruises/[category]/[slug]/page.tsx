@@ -247,7 +247,7 @@ export default function CruiseDetailPage() {
       height: 630,
       alt: cruise?.title
     },
-    canonicalUrl: `https://yourwebsite.com/cruises/${cruise?.slug}`,
+    canonicalUrl: `https://prithvi-travels-36eo.vercel.app/cruises/america-holland-cruise/holland-america-cruise`,
     keywords: 'cruise, travel, vacation, package, booking',
     twitter: {
       card: 'summary_large_image',

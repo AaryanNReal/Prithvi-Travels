@@ -42,31 +42,18 @@ type Metadata = {
 
 export function useMetadata(metadata: Metadata) {
   useEffect(() => {
-    // Helper to ensure image URLs are absolute and Vercel-optimized
+    // Helper to ensure image URLs are absolute
     const ensureAbsoluteUrl = (url: string) => {
       if (!url) return '';
-      
-      // Already absolute URL
-      if (url.startsWith('http')) return url;
-      
-      // For Vercel deployments, we need to ensure proper asset handling
-      const baseUrl = window.location.origin;
-      
-      // Handle Vercel's static file serving
-      if (url.startsWith('/')) {
-        // Add cache-busting query parameter for social media previews
-        return `${baseUrl}${url}?v=${Date.now()}`;
-      }
-      
-      return `${baseUrl}/${url}`;
+      return url.startsWith('http') ? url : `${window.location.origin}${url.startsWith('/') ? url : `/${url}`}`;
     };
 
-    // Helper to update or create meta tags with proper escaping
+    // Helper to update or create meta tags
     const updateMeta = (property: string, content: string) => {
-      if (!content) return;
-      
-      let element = document.querySelector(`meta[property="${property}"], meta[name="${property}"]`) as HTMLMetaElement;
-      
+      let element = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+      if (!element) {
+        element = document.querySelector(`meta[name="${property}"]`) as HTMLMetaElement;
+      }
       if (!element) {
         element = document.createElement('meta');
         if (property.startsWith('og:') || property.startsWith('article:')) {
@@ -76,16 +63,10 @@ export function useMetadata(metadata: Metadata) {
         }
         document.head.appendChild(element);
       }
-      
-      // Special handling for URLs to ensure proper encoding
-      if (property.includes('url') || property.includes('image')) {
-        element.setAttribute('content', encodeURI(content));
-      } else {
-        element.setAttribute('content', content);
-      }
+      element.setAttribute('content', content);
     };
 
-    // Set document title (important for fallbacks)
+    // Set document title
     if (metadata.title) {
       document.title = metadata.title;
     }
@@ -98,72 +79,68 @@ export function useMetadata(metadata: Metadata) {
       updateMeta('keywords', metadata.keywords);
     }
 
-    // Process image metadata with Vercel-specific optimizations
+    // Process image metadata (string or object)
     const processImage = (image: string | ImageMetadata | undefined): ImageMetadata | null => {
       if (!image) return null;
-      
       if (typeof image === 'string') {
-        return { 
-          url: ensureAbsoluteUrl(image),
-          width: 1200,  // Default to recommended OG image size
-          height: 630,
-          alt: metadata.title || 'Website preview'
-        };
+        return { url: ensureAbsoluteUrl(image) };
       }
-      
-      return { 
-        ...image, 
-        url: ensureAbsoluteUrl(image.url),
-        width: image.width || 1200,
-        height: image.height || 630,
-        alt: image.alt || metadata.title || 'Website preview'
-      };
+      return { ...image, url: ensureAbsoluteUrl(image.url) };
     };
 
-    // Get primary image with proper fallbacks
+    // Get primary image (from root, openGraph, or twitter)
     const primaryImage = processImage(metadata.image) || 
                         (metadata.openGraph?.images?.[0]) || 
                         (metadata.twitter?.images?.[0]);
 
     // Open Graph (essential for social previews)
-    const og = metadata.openGraph || {};
-    const siteName = og.siteName || 'Prithvi Travels';
-    
-    // Required OG tags
-    updateMeta('og:type', og.type || 'website');
-    updateMeta('og:site_name', siteName);
-    updateMeta('og:title', og.title || metadata.title || document.title);
-    updateMeta('og:description', og.description || metadata.description || '');
-    updateMeta('og:url', og.url || metadata.canonicalUrl || window.location.href);
-    
-    // Handle images - critical for previews
-    const images = og.images || (primaryImage ? [primaryImage] : []);
-    if (images.length > 0) {
-      const img = images[0];
-      updateMeta('og:image', img.url);
-      updateMeta('og:image:width', (img.width || 1200).toString());
-      updateMeta('og:image:height', (img.height || 630).toString());
-      updateMeta('og:image:alt', img.alt || og.title || metadata.title || siteName);
-      if (img.type) updateMeta('og:image:type', img.type);
+    if (metadata.openGraph || primaryImage) {
+      const og = metadata.openGraph || {};
+      const siteName = og.siteName || 'Prithvi Travels'; // Default to your site name
       
-      // Additional image for redundancy
-      updateMeta('image', img.url);
+      updateMeta('og:type', og.type || 'website');
+      updateMeta('og:site_name', siteName);
+      updateMeta('og:title', og.title || metadata.title || document.title);
+      updateMeta('og:description', og.description || metadata.description || '');
+      updateMeta('og:url', og.url || metadata.canonicalUrl || window.location.href);
+      
+      // Handle images
+      const images = og.images || (primaryImage ? [primaryImage] : []);
+      if (images.length > 0) {
+        const img = images[0];
+        updateMeta('og:image', img.url);
+        if (img.width) updateMeta('og:image:width', img.width.toString());
+        if (img.height) updateMeta('og:image:height', img.height.toString());
+        if (img.alt) updateMeta('og:image:alt', img.alt || og.title || metadata.title || '');
+        if (img.type) updateMeta('og:image:type', img.type);
+      }
+
+      // Article-specific tags (for blogs/news)
+      if (og.type === 'article') {
+        if (og.publishedTime) updateMeta('article:published_time', og.publishedTime);
+        if (og.modifiedTime) updateMeta('article:modified_time', og.modifiedTime);
+        if (og.author) updateMeta('article:author', og.author);
+      }
     }
 
-    // Twitter Card (must match OG tags)
-    const tw = metadata.twitter || {};
-    const cardType = tw.card || (primaryImage?.width && primaryImage.width >= 800 ? 'summary_large_image' : 'summary');
-    
-    updateMeta('twitter:card', cardType);
-    if (tw.site) updateMeta('twitter:site', tw.site);
-    updateMeta('twitter:creator', tw.creator || tw.site || '');
-    updateMeta('twitter:title', tw.title || og.title || metadata.title || document.title);
-    updateMeta('twitter:description', tw.description || og.description || metadata.description || '');
-    
-    if (images.length > 0) {
-      const img = images[0];
-      updateMeta('twitter:image', img.url);
-      updateMeta('twitter:image:alt', img.alt || tw.title || og.title || metadata.title || siteName);
+    // Twitter Card (for Twitter previews)
+    if (metadata.twitter || primaryImage) {
+      const tw = metadata.twitter || {};
+      const cardType = tw.card || (primaryImage?.width && primaryImage.width >= 800 ? 'summary_large_image' : 'summary');
+      
+      updateMeta('twitter:card', cardType);
+      if (tw.site) updateMeta('twitter:site', tw.site);
+      updateMeta('twitter:creator', tw.creator || tw.site || ''); // Fallback to site handle
+      updateMeta('twitter:title', tw.title || metadata.title || document.title);
+      updateMeta('twitter:description', tw.description || metadata.description || '');
+      
+      // Twitter images
+      const images = tw.images || (primaryImage ? [primaryImage] : []);
+      if (images.length > 0) {
+        const img = images[0];
+        updateMeta('twitter:image', img.url);
+        if (img.alt) updateMeta('twitter:image:alt', img.alt);
+      }
     }
 
     // Facebook App ID (optional)
@@ -171,7 +148,7 @@ export function useMetadata(metadata: Metadata) {
       updateMeta('fb:app_id', metadata.facebook.appId);
     }
 
-    // Canonical URL (important for SEO)
+    // Canonical URL (SEO)
     if (metadata.canonicalUrl) {
       let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
       if (!link) {
@@ -182,13 +159,9 @@ export function useMetadata(metadata: Metadata) {
       link.href = metadata.canonicalUrl;
     }
 
-    // Additional recommended tags
-    updateMeta('theme-color', '#ffffff');
-    updateMeta('viewport', 'width=device-width, initial-scale=1');
-
     return () => {
-      // Clean up only the title to avoid breaking other potential meta tags
       document.title = '';
+      // Note: Meta tags are not cleaned up to avoid conflicts
     };
   }, [metadata]);
 }

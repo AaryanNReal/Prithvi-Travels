@@ -54,6 +54,8 @@ interface FormData {
 export default function CruiseDetailPage() {
 
 
+ 
+
   const params = useParams();
   const router = useRouter();
   
@@ -238,7 +240,7 @@ export default function CruiseDetailPage() {
       console.error('Booking submission failed:', error);
     }
   };
-  
+
 
   
 

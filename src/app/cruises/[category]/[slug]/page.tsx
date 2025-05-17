@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { db } from '@/app/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import CruiseDetailClient from './cruisedetails';
-
+import Link from 'next/link';
 interface Cruise {
   id: string;
   title: string;
@@ -116,9 +116,9 @@ export default async function CruiseDetailPage({
       <div className="min-h-screen flex flex-col items-center justify-center">
         <div className="text-center">
           <p className="text-xl text-red-500">Cruise not found</p>
-          <a href="/cruises" className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          <Link href="/cruises" className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
             Back to Cruises
-          </a>
+          </Link>
         </div>
       </div>
     );

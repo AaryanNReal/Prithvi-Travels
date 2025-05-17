@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 
 import { Inter } from "next/font/google";
 import "../styles/index.css";
-import { Metadata } from "next";
+
 import { Providers } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -14,36 +14,7 @@ const HIDE_HEADER_FOOTER_ROUTES = [
   // Add more routes as needed
 ];
 
-export const metadata: Metadata = {
-  title: {
-    template: 'Prithvi Travels',
-    default: 'Prithvi Travels',
-  },
-  description: 'Prithvi Travels , Best Travel Company',
-  keywords: ['Cruises', 'Tours', 'Travels'],
-  authors: [{ name: 'Prithvi Travels ', url: 'https://prithvi-travels-36eo.vercel.app' }],
-  themeColor: '#FCFCFC',
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: 'https://prithvi-travels-36eo.vercel.app/',
-    siteName: 'Prithvi Travels',
-    images: [
-      {
-        url: '/images/logo/logo.png',
-        width: 1200,
-        height: 630,
-        alt: 'Your Site Name',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Prithvi Travles',
-    description: 'Best Travel Agency',
-    images: ['/images/logo/logo.png'],
-  },
-};
+
 
 export default function RootLayout({
   children,

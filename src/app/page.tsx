@@ -13,7 +13,7 @@ import International from "@/components/International/Intertional";
 import Pricing from "@/components/Pricing";
 import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
-import { Metadata } from "next";
+
 import { useMetadata } from "./hooks/MetaDta";
 
 

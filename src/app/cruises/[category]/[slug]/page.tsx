@@ -73,58 +73,45 @@ export default function CruiseDetailPage() {
 
   // Dynamic metadata handling
   useEffect(() => {
-    if (!cruise) return;
+  if (!cruise) return;
 
-    // Update document title
-    document.title = `${cruise.title} | Cruise Package`;
+  // Update document title
+  document.title = `${cruise.title} | Prithvi Travels`;
 
-    // Create meta tags
-    const metaTags = [
-      { name: 'description', content: cruise.description },
-      { property: 'og:title', content: `${cruise.title} | Cruise Package` },
-      { property: 'og:description', content: cruise.description },
-      { property: 'og:image', content: cruise.imageURL },
-      { property: 'og:url', content: typeof window !== 'undefined' ? window.location.href : '' },
-      { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: `${cruise.title} | Cruise Package` },
-      { name: 'twitter:description', content: cruise.description },
-      { name: 'twitter:image', content: cruise.imageURL },
-      { 
-        name: 'keywords', 
-        content: `cruise, travel, ${cruise.location}, ${cruise.categoryDetails?.name || 'vacation'}, package, booking`
-      }
-    ];
+  // Meta tags configuration
+  const metaTags = [
+    { name: 'description', content: cruise.description },
+    { property: 'og:title', content: `${cruise.title} | Prithvi Travels` },
+    { property: 'og:description', content: cruise.description },
+    { property: 'og:image', content: cruise.imageURL },
+    { property: 'og:url', content: window.location.href },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: `${cruise.title} | Prithvi Travels` },
+    { name: 'twitter:description', content: cruise.description },
+    { name: 'twitter:image', content: cruise.imageURL },
+  ];
 
-    // Remove existing meta tags to prevent duplicates
-    const existingMetaTags = document.querySelectorAll('meta[name], meta[property]');
-    existingMetaTags.forEach(tag => tag.remove());
+  // Remove existing meta tags to avoid duplicates
+  document.querySelectorAll('meta[name], meta[property]').forEach(tag => tag.remove());
 
-    // Add new meta tags
-    metaTags.forEach(tagConfig => {
-      const meta = document.createElement('meta');
-      if ('name' in tagConfig) {
-        meta.name = tagConfig.name;
-      } else {
-        meta.setAttribute('property', tagConfig.property);
-      }
-      meta.content = tagConfig.content;
-      document.head.appendChild(meta);
+  // Add new meta tags
+  metaTags.forEach(tag => {
+    const meta = document.createElement('meta');
+    if ('name' in tag) meta.name = tag.name;
+    if ('property' in tag) meta.setAttribute('property', tag.property);
+    meta.content = tag.content;
+    document.head.appendChild(meta);
+  });
+
+  // Cleanup on unmount
+  return () => {
+    document.title = 'Prithvi Travels';
+    metaTags.forEach(tag => {
+      const selector = 'name' in tag ? `meta[name="${tag.name}"]` : `meta[property="${tag.property}"]`;
+      document.querySelector(selector)?.remove();
     });
-
-    // Cleanup function
-    return () => {
-      document.title = 'Your Default Site Title';
-      metaTags.forEach(tagConfig => {
-        const selector = 'name' in tagConfig 
-          ? `meta[name="${tagConfig.name}"]` 
-          : `meta[property="${tagConfig.property}"]`;
-        const tag = document.querySelector(selector);
-        if (tag) {
-          document.head.removeChild(tag);
-        }
-      });
-    };
-  }, [cruise]);
+  };
+}, [cruise]);
 
   // Auth state handler
   useEffect(() => {

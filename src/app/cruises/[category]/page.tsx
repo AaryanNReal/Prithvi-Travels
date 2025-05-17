@@ -7,7 +7,7 @@ import { use, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { useMetadata } from "@/app/hooks/MetaDta";
+
 interface CategoryDetails {
   categoryID: string;
   name: string;
@@ -95,20 +95,7 @@ export default function CategoryCruisesPage() {
     }
   }, [categorySlug]);
 
-  useMetadata({   
-    title: `${categoryData?.name || "Loading..."} Cruises`,
-    description: categoryData?.description,
-    openGraph: {
-      title: `${categoryData?.name || "Loading..."} Cruises`,
-      description: categoryData?.description,
-      images: [
-        {
-          url: "/images/default-image.jpg",
-          alt: `${categoryData?.name || "Loading..."} Cruises`,
-        },
-      ],
-    },
-  });
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 mt-12 px-4 sm:px-6 lg:px-8">

@@ -14,38 +14,11 @@ import Pricing from "@/components/Pricing";
 import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
 
-import { useMetadata } from "./hooks/MetaDta";
 
 
 export default function Home() {
   
-useMetadata({
-  title: "Prithvi Travels - Top Travel Destinations for 2024",
-  description: "Discover the top places to visit this year with Prithvi Travels.",
-  image: {
-    url: "https://firebasestorage.googleapis.com/v0/b/foodweb-world.firebasestorage.app/o/adminPanel%2Farchive%2Fimages%2Fsubboard.jpg?alt=media&token=d7de14c2-69fa-44a8-a09f-a55a565b362d",  // Will auto-convert to absolute URL
-    width: 1200,
-    height: 630,
-    alt: "Travel destinations collage",
-  },
-  canonicalUrl: "https://prithvi-travels-36eo.vercel.app",
-  openGraph: {
-    type: "article",
-    siteName: "Prithvi Travels",
-    publishedTime: "2024-05-20T00:00:00Z",
-    images:[
-      {
-        url:"https://firebasestorage.googleapis.com/v0/b/foodweb-world.firebasestorage.app/o/adminPanel%2Farchive%2Fimages%2Fsubboard.jpg?alt=media&token=d7de14c2-69fa-44a8-a09f-a55a565b362d",  // Will auto-convert to absolute URL
-    width: 1200,
-      }
-    ]
-  },
-  keywords : "Travel",
-  twitter: {
-    card: "summary_large_image",
-    site: "@PrithviTravels",
-  },
-}); 
+
   
   return (
     <>

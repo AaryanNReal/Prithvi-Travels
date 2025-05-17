@@ -14,7 +14,7 @@ import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import Head from 'next/head';
-import { useMetadata } from '@/app/hooks/MetaDta';
+
 interface ItineraryDay {
   title: string;
   description: string;
@@ -278,30 +278,8 @@ export default function TourDetailPage() {
   }
 };
 
-useMetadata({   
-  title: `${tour?.title} - Tour Details`,
-  description: tour?.description || 'Tour details page',
-  image: {
-    url: tour?.imageURL || '/images/logo/logo.png',
-    width: 1200,
-    height: 630,
-    alt: tour?.title || 'Tour Image',
-  },
-  canonicalUrl: `${slug}`,
-  openGraph: {
-    type: 'website',
-    siteName: 'Prithvi Travels',
-    publishedTime: tour?.startDate || new Date().toISOString(),
-  },
-  twitter: {
-    card: 'summary_large_image',
-    site: '@PrithviTravels',
-  },
-  
 
 
-  keywords: tour?.tags ? Object.values(tour.tags).map(tag => tag.name).join(', ') : '',
-});
 
 
   if (loading) return (

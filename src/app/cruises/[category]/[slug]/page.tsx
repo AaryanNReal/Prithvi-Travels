@@ -10,7 +10,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { CalendarIcon, MapPinIcon, CurrencyDollarIcon, TagIcon, UserIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import MobileNumberInput from '@/components/PhoneInput';
-import { useMetadata } from '@/app/hooks/MetaDta';
+
 interface Cruise {
   id: string;
   title: string;
@@ -238,38 +238,7 @@ export default function CruiseDetailPage() {
       console.error('Booking submission failed:', error);
     }
   };
-  useMetadata({
-    title: cruise?.title,
-    description: cruise?.description,
-    image: {
-      url: cruise?.imageURL,
-      width: 1200,
-      height: 630,
-      alt: cruise?.title
-    },
-    canonicalUrl: `https://prithvi-travels-36eo.vercel.app/cruises/america-holland-cruise/holland-america-cruise`,
-    keywords: 'cruise, travel, vacation, package, booking',
-    twitter: {
-      card: 'summary_large_image',
-      site: '@PrithviTravels',
-      title: cruise?.title,
-      description: cruise?.description,
-      
-    },  
-    openGraph: {
-      title: cruise?.title,
-      description: cruise?.description,
-      images: [
-        {
-          url: cruise?.imageURL,
-          width: 800,
-          height: 600
-        }
-      ]
-    },
   
-    
-  });
 
   
 

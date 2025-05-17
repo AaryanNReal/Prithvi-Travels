@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     images: [
       {
         url: '/images/logo/logo.png',
-        width: 1000,
+        width: 1200,
         height: 630,
         alt: 'Your Site Name',
       },

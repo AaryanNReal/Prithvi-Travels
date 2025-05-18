@@ -215,18 +215,19 @@ const Header = () => {
     />
   ) : (
     <>
-      <Link
-        href="/signin"
-        className="text-dark lg:px-8  lg:py-3 md:py-2 sm:px-2 mr-2 text-base font-medium hover:opacity-70 dark:text-white block md:inline-block sm:inline-block"
-      >
-        Sign In
-      </Link>
-      <Link
-        href="/signup"
-        className="ease-in-up shadow-btn hover:shadow-btn-hover bg-primary hover:bg-primary/90 rounded-xs lg:px-8  lg:py-3 md:py-2 text-base font-medium text-white transition duration-300 block md:inline-block sm:inline-block"
-      >
-        Sign Up
-      </Link>
+      
+<Link
+  href="/signin"
+  className="text-dark text-sm md:text-base px-3 py-1.5 md:px-4 md:py-2 lg:px-8 lg:py-3 mr-2 font-medium hover:opacity-70 dark:text-white block md:inline-block"
+>
+  Sign In
+</Link>
+<Link
+  href="/signup"
+  className="text-sm md:text-base px-3 py-1.5 md:px-4 md:py-2 lg:px-8 lg:py-3 font-medium transition duration-300 block md:inline-block md:bg-primary md:hover:bg-primary/90 md:rounded-xs md:shadow-btn md:hover:shadow-btn-hover md:text-white text-primary hover:opacity-70"
+>
+  Sign Up
+</Link>
     </>
   )}
 </div>

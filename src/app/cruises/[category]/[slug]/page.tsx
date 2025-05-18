@@ -9,7 +9,6 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  // Decode the URL parameter just like the client component does
   const slug = decodeURIComponent(params.slug);
   
   try {
@@ -18,7 +17,8 @@ export async function generateMetadata({
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      const cruise = querySnapshot.docs[0].data();
+      const docSnap = querySnapshot.docs[0];
+      const cruise = docSnap.data();
       
       return {
         title: `${cruise.title} | Cruise Details`,
@@ -33,6 +33,12 @@ export async function generateMetadata({
             alt: cruise.title,
           }],
         },
+        twitter: {
+          card: 'summary_large_image',
+          title: cruise.title,
+          description: cruise.description.substring(0, 160),
+          images: [cruise.imageURL],
+        },
       };
     }
   } catch (error) {
@@ -45,8 +51,8 @@ export async function generateMetadata({
   };
 }
 
+// This is the key fix - we don't try to use params in the Page component
+// because the client component will handle that itself
 export default function Page() {
-  // Render the client component exactly as-is
-  // It will handle its own data fetching with useParams()
   return <CruiseDetail />;
 }

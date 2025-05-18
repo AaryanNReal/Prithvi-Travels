@@ -46,7 +46,6 @@ interface Ticket {
 }
 
 const HelpDeskPage = () => {
-  // State management
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState({
@@ -67,7 +66,6 @@ const HelpDeskPage = () => {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const router = useRouter();
 
-  // Form state
   const [form, setForm] = useState({
     category: 'Account Related',
     description: '',
@@ -106,18 +104,10 @@ const HelpDeskPage = () => {
       checkPendingClosures(user.uid);
     }, 60000);
 
-    // Initial check
     checkPendingClosures(user.uid);
 
     return () => clearInterval(interval);
   }, [user?.uid]);
-
-  // Form validation
-  useEffect(() => {
-    if (form.isSubmitted) {
-      validateForm();
-    }
-  }, [form.category, form.description, form.isSubmitted]);
 
   // Data fetching
   const fetchTickets = useCallback(async (userId: string) => {
@@ -167,11 +157,6 @@ const HelpDeskPage = () => {
     }
   }, []);
 
-  const handleRefresh = useCallback(async () => {
-    if (!user?.uid) return;
-    await fetchTickets(user.uid);
-  }, [user?.uid, fetchTickets]);
-
   const checkPendingClosures = useCallback(async (userId: string) => {
     try {
       const now = new Date();
@@ -208,6 +193,40 @@ const HelpDeskPage = () => {
     }
   }, [fetchTickets]);
 
+  // Ticket reopening functionality
+  const handleReopenTicket = useCallback(async (ticketId: string) => {
+    if (!window.confirm('Are you sure you want to reopen this ticket?') || !user?.uid) return;
+    
+    try {
+      setLoading(prev => ({ ...prev, refresh: true }));
+      const ticketRef = doc(db, 'helpdesk', ticketId);
+      
+      await updateDoc(ticketRef, {
+        status: "reopened",
+        updatedAt: serverTimestamp(),
+        responses: {
+          ...tickets.find(t => t.id === ticketId)?.responses,
+          reopened: {
+            response: "Ticket reopened by user",
+            createdAt: serverTimestamp()
+          }
+        }
+      });
+
+      showNotification('success', 'Ticket reopened successfully!');
+      await fetchTickets(user.uid);
+    } catch (error) {
+      console.error('Error reopening ticket:', error);
+      showNotification('error', 'Failed to reopen ticket');
+    } finally {
+      setLoading(prev => ({ ...prev, refresh: false }));
+    }
+  }, [user?.uid, tickets, fetchTickets]);
+ const canReopenTicket = (ticket: Ticket) => {
+    return ticket.status === 'resolved' && 
+           (!ticket.resolvedAt || 
+            new Date(ticket.resolvedAt.toDate()) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000));
+  };
   // Form handling
   const validateForm = useCallback(() => {
     const newErrors = {
@@ -327,15 +346,6 @@ const HelpDeskPage = () => {
     return date.toDate().toLocaleString();
   };
 
-  const canReopenTicket = (ticket: Ticket) => {
-    if (ticket.status !== 'resolved') return false;
-    if (!ticket.resolvedAt?.toDate) return false;
-    
-    const resolvedDate = ticket.resolvedAt.toDate();
-    const threeDaysLater = new Date(resolvedDate.getTime() + 3 * 24 * 60 * 60 * 1000);
-    return new Date() < threeDaysLater;
-  };
-
   // UI handlers
   const showModal = () => {
     setIsModalOpen(true);
@@ -360,35 +370,6 @@ const HelpDeskPage = () => {
   const closeTicketDetails = () => {
     setSelectedTicket(null);
   };
-
-  const handleReopenTicket = useCallback(async (ticketId: string) => {
-    if (!window.confirm('Are you sure you want to reopen this ticket?') || !user?.uid) return;
-    
-    try {
-      setLoading(prev => ({ ...prev, refresh: true }));
-      const ticketRef = doc(db, 'helpdesk', ticketId);
-      
-      await updateDoc(ticketRef, {
-        status: "reopened",
-        updatedAt: serverTimestamp(),
-        responses: {
-          ...tickets.find(t => t.id === ticketId)?.responses,
-          reopened: {
-            response: "Ticket reopened by user",
-            createdAt: serverTimestamp()
-          }
-        }
-      });
-
-      showNotification('success', 'Ticket reopened successfully!');
-      await fetchTickets(user.uid);
-    } catch (error) {
-      console.error('Error reopening ticket:', error);
-      showNotification('error', 'Failed to reopen ticket');
-    } finally {
-      setLoading(prev => ({ ...prev, refresh: false }));
-    }
-  }, [user?.uid, tickets, fetchTickets]);
 
   const handleUploadSuccess = (url: string) => {
     setAttachmentUrl(url);
@@ -447,7 +428,7 @@ const HelpDeskPage = () => {
           <h1 className="text-2xl font-bold text-gray-800">My Help Desk Tickets</h1>
           <div className="flex space-x-3">
             <button
-              onClick={handleRefresh}
+              onClick={() => fetchTickets(user.uid)}
               disabled={loading.refresh}
               className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md flex items-center"
             >
@@ -748,21 +729,12 @@ const HelpDeskPage = () => {
                 </div>
               )}
 
-              {selectedTicket.responses.closed && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-500">Closure Response</h3>
-                  <div className="mt-1 p-3 bg-red-50 rounded-md">
-                    <p className="text-sm text-gray-900 whitespace-pre-line">{selectedTicket.responses.closed.response}</p>
-                  </div>
-                </div>
-              )}
-
               <div className="flex justify-end">
                 {canReopenTicket(selectedTicket) && (
                   <button
                     onClick={() => {
-                      closeTicketDetails();
                       handleReopenTicket(selectedTicket.id);
+                      closeTicketDetails();
                     }}
                     className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >

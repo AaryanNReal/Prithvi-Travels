@@ -21,13 +21,13 @@ const menuData: Menu[] = [
       {
         id: 22,
         title: "International Destinations",
-        path: "/about",
+        path: "/tours/international",
         newTab: false,
       },
       {
         id: 23,
         title: "Domestic Destinations",
-        path: "/about",
+        path: "/tours/domestic",
         newTab: false,
       },
     ],
@@ -35,7 +35,7 @@ const menuData: Menu[] = [
   {
     id: 3,
     title: "Visa Expert",
-    path:"/tours/visa-expert",
+    path:"/visa-expert",
     newTab: false,
     
     

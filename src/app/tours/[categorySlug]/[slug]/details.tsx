@@ -84,7 +84,7 @@ export default function TourDetailPage() {
     name: '',
     email: '',
     phone: '',
-    
+     
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
 
@@ -342,7 +342,11 @@ export default function TourDetailPage() {
               <h1 className='text-blue-500 text-sm font-medium p-1 rounded-sm hover:text-blue-600 transition-colors duration-200'>{tour.categoryDetails.name}</h1>
             </Link>
           )}
-          <p className='text-gray-600 mt-2 max-w-3xl leading-relaxed'>{tour.description}</p>
+         <p className='text-gray-600 mt-2 max-w-3xl leading-relaxed'>
+  {tour.description.length > 500 
+    ? `${tour.description.substring(0, 500)}...` 
+    : tour.description}
+</p>
           <div className="mt-6 relative h-96 w-full">
             <Image
               src={tour.imageURL}

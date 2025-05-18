@@ -294,7 +294,11 @@ export default function CruiseDetailPage() {
                 </h2>
               </Link>
             )}
-            <p className="text-gray-600 mt-2 max-w-3xl leading-relaxed">{cruise.description}</p>
+            <p className='text-gray-600 mt-2 max-w-3xl leading-relaxed'>
+  {cruise.description.length > 500 
+    ? `${cruise.description.substring(0, 500)}...` 
+    : cruise.description}
+</p>
             <div className="mt-6 relative h-96 w-full">
               <Image
                 src={cruise.imageURL}

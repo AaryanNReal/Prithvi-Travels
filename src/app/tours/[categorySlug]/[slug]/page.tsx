@@ -1,48 +1,72 @@
-// app/cruises/[category]/[slug]/page.tsx
+// app/tours/[categorySlug]/[slug]/page.tsx
 import { Metadata } from 'next';
 import { db } from '@/app/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import CruiseDetail from './details';
-
+import TourDetail from './details';
+interface Tag {
+  name: string;
+  slug: string;
+}
 export async function generateMetadata(
   props: {
-    params: Promise<{ category: string; slug: string }>;
+    params: Promise<{ categorySlug: string; slug: string }>;
   }
 ): Promise<Metadata> {
   const params = await props.params;
-  // Create a synchronous function to decode parameters
-  const decodeParams = () => ({
-    category: decodeURIComponent(params.category),
-    slug: decodeURIComponent(params.slug),
-  });
-
-  // Get decoded parameters synchronously
-  const { category, slug } = decodeParams();
+  const { categorySlug, slug } = params;
+  const baseUrl = 'https://prithvi-travels-36eo.vercel.app';
 
   try {
-    const cruisesRef = collection(db, 'tours');
+    const toursRef = collection(db, 'tours');
     const q = query(
-      cruisesRef,
+      toursRef,
       where('slug', '==', slug),
-      where('categoryDetails.slug', '==', category)
+      where('categoryDetails.slug', '==', categorySlug),
+      where('status', '==', 'active')
     );
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      const cruise = querySnapshot.docs[0].data();
+      const tour = querySnapshot.docs[0].data();
+    const tags = tour.tags ? Object.values(tour.tags as Record<string, Tag>).map(tag => tag.name) : [];
+      const defaultKeywords = [
+        'tour packages',
+        'travel agency',
+        'vacation packages',
+        categorySlug.replace('-', ' '),
+        tour.location || '',
+        `${tour.numberofDays} days tour`,
+        `${tour.numberofNights} nights tour`
+      ];
       
+      const allKeywords = [...tags, ...defaultKeywords].filter(Boolean);
+      const description = tour.description.substring(0, 160);
+      const url = `${baseUrl}/tours/${categorySlug}/${slug}`;
+
       return {
-        title: `${cruise.title} | Prithvi Travels`,
-        description: cruise.description.substring(0, 160),
+        title: `${tour.title} | Prithvi Travels`,
+        description,
+        keywords: allKeywords.join(', '),
         openGraph: {
-          title: cruise.title,
-          description: cruise.description.substring(0, 160),
+          title: tour.title,
+          description,
+          url,
+          type: 'website',
           images: [{
-            url: cruise.imageURL || '/images/logo/logo.png',
+            url: tour.imageURL || `${baseUrl}/images/logo/logo.png`,
             width: 800,
             height: 600,
-            alt: cruise.title,
+            alt: tour.title,
           }],
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title: tour.title,
+          description,
+          images: [tour.imageURL || `${baseUrl}/images/logo/logo.png`],
+        },
+        alternates: {
+          canonical: url,
         },
       };
     }
@@ -51,11 +75,12 @@ export async function generateMetadata(
   }
 
   return {
-    title: 'Cruise Details | Prithvi Travels',
-    description: 'Explore this amazing cruise opportunity',
+    title: 'Tour Details | Prithvi Travels',
+    description: 'Explore this amazing tour opportunity',
+    keywords: 'tour, travel, vacation, package',
   };
 }
 
 export default function Page() {
-  return <CruiseDetail />;
+  return <TourDetail />;
 }

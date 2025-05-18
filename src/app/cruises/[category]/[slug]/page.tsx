@@ -1,24 +1,31 @@
-// app/cruises/[slug]/page.tsx
+// app/cruises/[category]/[slug]/page.tsx
 import { Metadata } from 'next';
 import { db } from '@/app/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import CruiseDetail from './details';
 
-export async function generateMetadata(): Promise<Metadata> {
-  // Extract the slug from the URL path
-  const pathParts = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
-  const slug = pathParts.length > 0 ? decodeURIComponent(pathParts[pathParts.length - 1]) : '';
-  
-  if (!slug) {
-    return {
-      title: 'Cruise Details | Prithvi Travels',
-      description: 'Explore this amazing cruise opportunity',
-    };
+export async function generateMetadata(
+  props: {
+    params: Promise<{ category: string; slug: string }>;
   }
+): Promise<Metadata> {
+  const params = await props.params;
+  // Create a synchronous function to decode parameters
+  const decodeParams = () => ({
+    category: decodeURIComponent(params.category),
+    slug: decodeURIComponent(params.slug),
+  });
+
+  // Get decoded parameters synchronously
+  const { category, slug } = decodeParams();
 
   try {
     const cruisesRef = collection(db, 'cruises');
-    const q = query(cruisesRef, where('slug', '==', slug));
+    const q = query(
+      cruisesRef,
+      where('slug', '==', slug),
+      where('categoryDetails.slug', '==', category)
+    );
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {

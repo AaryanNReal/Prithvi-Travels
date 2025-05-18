@@ -197,46 +197,46 @@ const HelpDeskPage = () => {
     }
   }, [fetchTickets]);
 
-  // Ticket reopening functionality
-  const handleReopenTicket = useCallback(async () => {
-    if (!selectedTicket?.id || !user?.uid || !reopenMessage) {
-      showNotification('error', 'Please provide a reason for reopening the ticket');
-      return;
-    }
+const handleReopenTicket = useCallback(async () => {
+  if (!selectedTicket?.id || !user?.uid || !reopenMessage) {
+    showNotification('error', 'Please provide a reason for reopening the ticket');
+    return;
+  }
+  
+  try {
+    setLoading(prev => ({ ...prev, reopen: true }));
+    const ticketRef = doc(db, 'helpdesk', selectedTicket.id);
     
-    try {
-      setLoading(prev => ({ ...prev, reopen: true }));
-      const ticketRef = doc(db, 'helpdesk', selectedTicket.id);
-      
-      await updateDoc(ticketRef, {
-        status: "reopened",
-        updatedAt: serverTimestamp(),
-        responses: {
-          ...selectedTicket.responses,
-          reopened: {
-            response: reopenMessage,
-            attachmentURL: reopenAttachmentUrl || "",
-            createdAt: serverTimestamp()
-          }
+    await updateDoc(ticketRef, {
+      status: "reopened",
+      updatedAt: serverTimestamp(),
+      responses: {
+        ...selectedTicket.responses,
+        reopened: {
+          response: reopenMessage,
+          attachmentURL: reopenAttachmentUrl || "",
+          createdAt: serverTimestamp()
         }
-      });
+      }
+    });
 
-      showNotification('success', 'Ticket reopened successfully!');
-      closeReopenModal();
-      await fetchTickets(user.uid);
-    } catch (error) {
-      console.error('Error reopening ticket:', error);
-      showNotification('error', 'Failed to reopen ticket');
-    } finally {
-      setLoading(prev => ({ ...prev, reopen: false }));
-    }
-  }, [user?.uid, selectedTicket, reopenMessage, reopenAttachmentUrl, fetchTickets]);
+    showNotification('success', 'Ticket reopened successfully!');
+    closeReopenModal();
+    setSelectedTicket(null); // Add this line to ensure details modal doesn't open
+    await fetchTickets(user.uid);
+  } catch (error) {
+    console.error('Error reopening ticket:', error);
+    showNotification('error', 'Failed to reopen ticket');
+  } finally {
+    setLoading(prev => ({ ...prev, reopen: false }));
+  }
+}, [user?.uid, selectedTicket, reopenMessage, reopenAttachmentUrl, fetchTickets]);
+ const canReopenTicket = (ticket: Ticket) => {
+  return ticket.status === 'resolved' && 
+         (!ticket.resolvedAt || 
+          new Date(ticket.resolvedAt.toDate()) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000));
+};
 
-  const canReopenTicket = (ticket: Ticket) => {
-    return ticket.status === 'resolved' && 
-           (!ticket.resolvedAt || 
-            new Date(ticket.resolvedAt.toDate()) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000));
-  };
 
   const openReopenModal = (ticket: Ticket) => {
     setSelectedTicket(ticket);
@@ -840,14 +840,17 @@ const HelpDeskPage = () => {
               )}
 
               <div className="flex justify-end">
-                {canReopenTicket(selectedTicket) && (
-                  <button
-                    onClick={() => openReopenModal(selectedTicket)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Reopen Ticket
-                  </button>
-                )}
+               {canReopenTicket(selectedTicket) && (
+  <button
+    onClick={() => {
+      closeTicketDetails();
+      openReopenModal(selectedTicket);
+    }}
+    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+  >
+    Reopen Ticket
+  </button>
+)}
               </div>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { collection, query, where, getDocs, doc, getDoc, serverTimestamp, setDoc
 import { db, auth } from '@/app/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Image from 'next/image';
-import Head from 'next/head';
+
 import Link from 'next/link';
 import { CalendarIcon, MapPinIcon, CurrencyDollarIcon, TagIcon, UserIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import MobileNumberInput from '@/components/PhoneInput';
@@ -273,7 +273,7 @@ export default function CruiseDetailPage() {
 
   return (
     <>
-      
+     
       <div className="flex flex-col md:flex-row mt-24 max-w-7xl mx-auto p-4 gap-8">
         {/* Main Cruise Details */}
         <div className="md:w-2/3">
@@ -477,4 +477,4 @@ export default function CruiseDetailPage() {
       </div>
     </>
   );
-}
+} 

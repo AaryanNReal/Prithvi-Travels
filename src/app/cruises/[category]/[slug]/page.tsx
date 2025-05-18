@@ -45,7 +45,7 @@ export async function generateMetadata(
         openGraph: {
           title: cruise.title,
           description: cruise.description.substring(0, 160),
-          images: cruise.imageURL || '/images/logo/logo.png',
+          images: cruise.imageURL 
         },
       };
     }

@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 
 import { Inter } from "next/font/google";
 import "../styles/index.css";
-
+import { Metadata } from "next";
 import { Providers } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -13,7 +13,6 @@ const HIDE_HEADER_FOOTER_ROUTES = [
   '/tag'
   // Add more routes as needed
 ];
-
 
 
 export default function RootLayout({

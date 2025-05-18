@@ -52,10 +52,12 @@ const HelpDeskPage = () => {
     initial: true,
     refresh: false,
     submit: false,
+    reopen: false,
   });
   const [user, setUser] = useState<User | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false);
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
+  const [reopenAttachmentUrl, setReopenAttachmentUrl] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<{
     success: { show: boolean; message: string };
     error: { show: boolean; message: string };
@@ -64,6 +66,8 @@ const HelpDeskPage = () => {
     error: { show: false, message: '' },
   });
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
+  const [reopenMessage, setReopenMessage] = useState('');
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -194,39 +198,59 @@ const HelpDeskPage = () => {
   }, [fetchTickets]);
 
   // Ticket reopening functionality
-  const handleReopenTicket = useCallback(async (ticketId: string) => {
-    if (!window.confirm('Are you sure you want to reopen this ticket?') || !user?.uid) return;
+  const handleReopenTicket = useCallback(async () => {
+    if (!selectedTicket?.id || !user?.uid || !reopenMessage) {
+      showNotification('error', 'Please provide a reason for reopening the ticket');
+      return;
+    }
     
     try {
-      setLoading(prev => ({ ...prev, refresh: true }));
-      const ticketRef = doc(db, 'helpdesk', ticketId);
+      setLoading(prev => ({ ...prev, reopen: true }));
+      const ticketRef = doc(db, 'helpdesk', selectedTicket.id);
       
       await updateDoc(ticketRef, {
         status: "reopened",
         updatedAt: serverTimestamp(),
         responses: {
-          ...tickets.find(t => t.id === ticketId)?.responses,
+          ...selectedTicket.responses,
           reopened: {
-            response: "Ticket reopened by user",
+            response: reopenMessage,
+            attachmentURL: reopenAttachmentUrl || "",
             createdAt: serverTimestamp()
           }
         }
       });
 
       showNotification('success', 'Ticket reopened successfully!');
+      closeReopenModal();
       await fetchTickets(user.uid);
     } catch (error) {
       console.error('Error reopening ticket:', error);
       showNotification('error', 'Failed to reopen ticket');
     } finally {
-      setLoading(prev => ({ ...prev, refresh: false }));
+      setLoading(prev => ({ ...prev, reopen: false }));
     }
-  }, [user?.uid, tickets, fetchTickets]);
- const canReopenTicket = (ticket: Ticket) => {
+  }, [user?.uid, selectedTicket, reopenMessage, reopenAttachmentUrl, fetchTickets]);
+
+  const canReopenTicket = (ticket: Ticket) => {
     return ticket.status === 'resolved' && 
            (!ticket.resolvedAt || 
             new Date(ticket.resolvedAt.toDate()) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000));
   };
+
+  const openReopenModal = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setReopenMessage('');
+    setReopenAttachmentUrl(null);
+    setIsReopenModalOpen(true);
+  };
+
+  const closeReopenModal = () => {
+    setIsReopenModalOpen(false);
+    setReopenMessage('');
+    setReopenAttachmentUrl(null);
+  };
+
   // Form handling
   const validateForm = useCallback(() => {
     const newErrors = {
@@ -375,6 +399,10 @@ const HelpDeskPage = () => {
     setAttachmentUrl(url);
   };
 
+  const handleReopenUploadSuccess = (url: string) => {
+    setReopenAttachmentUrl(url);
+  };
+
   const handleUploadError = (error: Error) => {
     console.error('Upload failed:', error);
     showNotification('error', 'File upload failed. Please try again.');
@@ -501,7 +529,7 @@ const HelpDeskPage = () => {
                       <div className="flex space-x-2">
                         {canReopenTicket(ticket) && (
                           <button
-                            onClick={() => handleReopenTicket(ticket.id)}
+                            onClick={() => openReopenModal(ticket)}
                             className="text-indigo-600 hover:text-indigo-900"
                           >
                             Reopen
@@ -621,8 +649,75 @@ const HelpDeskPage = () => {
         </div>
       )}
 
+      {/* Reopen Ticket Modal */}
+      {isReopenModalOpen && selectedTicket && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div className="border-b px-6 py-1">
+              <h2 className="text-xl font-semibold text-gray-800">Reopen Ticket #{selectedTicket.helpdeskID}</h2>
+            </div>
+            
+            <div className="p-4">
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="reopenMessage">
+                  Reason for Reopening <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="reopenMessage"
+                  rows={4}
+                  value={reopenMessage}
+                  onChange={(e) => setReopenMessage(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Please explain why you're reopening this ticket"
+                  required
+                />
+                <div className="text-right text-xs text-gray-500 mt-1">
+                  {reopenMessage.length}/1000 characters
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-1">
+                  Attachment (Optional)
+                </label>
+                <FirebaseFileUploader
+                  storagePath="helpdesk-attachments"
+                  accept=".pdf,.doc,.docx,.jpg,.png"
+                  maxSizeMB={15}
+                  disabled={false}
+                  onUploadStart={() => console.log('Upload started')}
+                  onUploadSuccess={handleReopenUploadSuccess}
+                  onUploadError={handleUploadError}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 15MB)
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={closeReopenModal}
+                  className="px-4 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReopenTicket}
+                  disabled={loading.reopen || !reopenMessage}
+                  className={`px-4 py-2 rounded-md text-white ${loading.reopen || !reopenMessage ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                >
+                  {loading.reopen ? 'Reopening...' : 'Reopen Ticket'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Ticket Details Modal */}
-      {selectedTicket && (
+      {selectedTicket && !isReopenModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="border-b px-6 py-4 flex justify-between items-center">
@@ -725,6 +820,21 @@ const HelpDeskPage = () => {
                   <h3 className="text-sm font-medium text-gray-500">Reopened Response</h3>
                   <div className="mt-1 p-3 bg-orange-50 rounded-md">
                     <p className="text-sm text-gray-900 whitespace-pre-line">{selectedTicket.responses.reopened.response}</p>
+                    {selectedTicket.responses.reopened.attachmentURL && (
+                      <div className="mt-2">
+                        <a 
+                          href={selectedTicket.responses.reopened.attachmentURL} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                          </svg>
+                          View Attachment
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -732,10 +842,7 @@ const HelpDeskPage = () => {
               <div className="flex justify-end">
                 {canReopenTicket(selectedTicket) && (
                   <button
-                    onClick={() => {
-                      handleReopenTicket(selectedTicket.id);
-                      closeTicketDetails();
-                    }}
+                    onClick={() => openReopenModal(selectedTicket)}
                     className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
                     Reopen Ticket

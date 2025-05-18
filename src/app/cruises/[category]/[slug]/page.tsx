@@ -17,11 +17,12 @@ const FALLBACK_METADATA: Metadata = {
 const getCruiseDocId = (slug: string, category: string) => 
   `cruise_${category}_${slug}`.toLowerCase();
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { category: string; slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ category: string; slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   // 3. Parallel decode and ID generation
   const [category, slug] = [
     decodeURIComponent(params.category),

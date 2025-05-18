@@ -1,41 +1,54 @@
 // app/cruises/[slug]/page.tsx
 import { Metadata } from 'next';
-import CruiseDetailComponent from './details';
+import { db } from '@/app/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import CruiseDetail from './details';
 
-export const metadata: Metadata = {
-  title: {
-    template: 'Prithvi Travels',
-    default: 'Prithvi Travels',
-  },
-  description: 'Prithvi Travels , Best Travel Company',
-  keywords: ['Cruises', 'Tours', 'Travels'],
-  authors: [{ name: 'Prithvi Travels ', url: 'https://prithvi-travels-36eo.vercel.app' }],
-  themeColor: '#FCFCFC',
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: 'https://prithvi-travels-36eo.vercel.app/',
-    siteName: 'Prithvi Travels',
-    images: [
-      {
-        url: '/images/logo/logo.png',
-        width: 1200,
-        height: 630,
-        alt: 'Your Site Name',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Prithvi Travles',
-    description: 'Best Travel Agency',
-    images: ['/images/logo/logo.png'],
-  },
-};
-// This tells TypeScript we're not using params in the page component
-export default function Page() {
-  return <CruiseDetailComponent />;
- 
+export async function generateMetadata(): Promise<Metadata> {
+  // Extract the slug from the URL path
+  const pathParts = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
+  const slug = pathParts.length > 0 ? decodeURIComponent(pathParts[pathParts.length - 1]) : '';
+  
+  if (!slug) {
+    return {
+      title: 'Cruise Details | Prithvi Travels',
+      description: 'Explore this amazing cruise opportunity',
+    };
+  }
+
+  try {
+    const cruisesRef = collection(db, 'cruises');
+    const q = query(cruisesRef, where('slug', '==', slug));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const cruise = querySnapshot.docs[0].data();
+      
+      return {
+        title: `${cruise.title} | Prithvi Travels`,
+        description: cruise.description.substring(0, 160),
+        openGraph: {
+          title: cruise.title,
+          description: cruise.description.substring(0, 160),
+          images: [{
+            url: cruise.imageURL || '/images/logo/logo.png',
+            width: 800,
+            height: 600,
+            alt: cruise.title,
+          }],
+        },
+      };
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+  }
+
+  return {
+    title: 'Cruise Details | Prithvi Travels',
+    description: 'Explore this amazing cruise opportunity',
+  };
 }
 
-
+export default function Page() {
+  return <CruiseDetail />;
+}

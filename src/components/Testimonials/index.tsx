@@ -5,31 +5,32 @@ import SingleTestimonial from "./SingleTestimonial";
 const testimonialData: Testimonial[] = [
   {
     id: 1,
-    name: "Musharof Chy",
-    designation: "Founder @TailGrids",
+    name: "Neel Sharma",
+    designation: "Adventure Seeker",
     content:
-      "Our members are so impressed. It's intuitive. It's clean. It's distraction free. If you're building a community.",
+      "The travel agency planned the perfect 2-week trip to Bali for us. Every detail was taken care of, from luxury villas to unique local experiences. Their insider knowledge made all the difference!",
     image: "/images/testimonials/auth-01.png",
     star: 5,
   },
   {
     id: 2,
-    name: "Devid Weilium",
-    designation: "Founder @UIdeck",
+    name: "Ananya Hakim",
+    designation: "Family Traveler",
     content:
-      "Our members are so impressed. It's intuitive. It's clean. It's distraction free. If you're building a community.",
+      "Traveling with kids can be stressful, but this agency made our European vacation seamless. They found kid-friendly activities and accommodations that kept everyone happy.",
     image: "/images/testimonials/auth-02.png",
     star: 5,
   },
   {
     id: 3,
-    name: "Lethium Frenci",
-    designation: "Founder @Lineicons",
+    name: "Priya Patel",
+    designation: "Honeymooner",
     content:
-      "Our members are so impressed. It's intuitive. It's clean. It's distraction free. If you're building a community.",
+      "Our Maldives honeymoon was absolutely magical thanks to this agency. They surprised us with a private sunset cruise and room upgrades. They are the best",
     image: "/images/testimonials/auth-03.png",
     star: 5,
   },
+  
 ];
 
 const Testimonials = () => {
@@ -37,8 +38,8 @@ const Testimonials = () => {
     <section className="dark:bg-bg-color-dark bg-gray-light relative z-10 py-16 md:py-20 lg:py-28">
       <div className="container">
         <SectionTitle
-          title="What Our Users Says"
-          paragraph="There are many variations of passages of Lorem Ipsum available but the majority have suffered alteration in some form."
+          title="What Our Travelers Say"
+          paragraph="Don't just take our word for it - hear from our globetrotters about their unforgettable journeys crafted by our expert team."
           center
         />
 

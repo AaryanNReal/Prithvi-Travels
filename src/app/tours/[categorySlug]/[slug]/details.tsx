@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { db, auth } from '@/app/lib/firebase';
 import { collection, getDocs, query, where, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -84,9 +84,11 @@ export default function TourDetailPage() {
     name: '',
     email: '',
     phone: '',
-     
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const dayRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
+
 
   const slug = decodeURIComponent(params.slug as string);
 
@@ -209,6 +211,15 @@ export default function TourDetailPage() {
     if (slug) fetchTourData();
   }, [slug]);
 
+  useEffect(() => {
+    if (selectedDay && dayRefs.current[selectedDay]) {
+      dayRefs.current[selectedDay]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }, [selectedDay]);
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -239,48 +250,43 @@ export default function TourDetailPage() {
     setFormData(prev => ({ ...prev, phone: value }));
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    const bookingId = `PTID${Date.now()}`;
-    
-    // Ensure we have a valid user ID or guest identifier
-    const userId = user?.uid || `GUEST${Date.now()}`;
-    const userID = userData?.userID || userId;
-    const userDetails = {
-      name: userData?.name || formData.name,
-      email: userData?.email || formData.email,
-      phone: userData?.phone || formData.phone,
-      uid: user?.uid || null,  // Explicitly set to null if no user
-      userID: userID
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const bookingId = `PTID${Date.now()}`;
+      
+      const userId = user?.uid || `GUEST${Date.now()}`;
+      const userID = userData?.userID || userId;
+      const userDetails = {
+        name: userData?.name || formData.name,
+        email: userData?.email || formData.email,
+        phone: userData?.phone || formData.phone,
+        uid: user?.uid || null,
+        userID: userID
+      };
 
-    const tourDetails = {
-      id: tour?.id,
-      title: tour?.title,
-      category: tour?.categoryDetails?.name,
-      ...tour
-    };
+      const tourDetails = {
+        id: tour?.id,
+        title: tour?.title,
+        category: tour?.categoryDetails?.name,
+        ...tour
+      };
 
-    await setDoc(doc(db, 'bookings', bookingId), {
-      bookingId,
-      status: 'captured',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      userDetails,
-      tourDetails
-    });
+      await setDoc(doc(db, 'bookings', bookingId), {
+        bookingId,
+        status: 'captured',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        userDetails,
+        tourDetails
+      });
 
-    setFormSubmitted(true);
-    setTimeout(() => setFormSubmitted(false), 3000);
-  } catch (error) {
-    console.error('Booking submission failed:', error);
-  }
-};
-
-
-
-
+      setFormSubmitted(true);
+      setTimeout(() => setFormSubmitted(false), 3000);
+    } catch (error) {
+      console.error('Booking submission failed:', error);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -310,204 +316,293 @@ export default function TourDetailPage() {
 
   const tagKeys = tour.tags ? Object.keys(tour.tags) : [];
 
-
+  const handleDaySelect = (dayKey: string) => {
+    setSelectedDay(dayKey);
+  };
 
   return (
     <>
-    <Head>
-      <title>{tour.title} - Tour Details</title>
-      <meta name="description" content={tour.description} />
-      <meta property="og:title" content={tour.title} />
-      <meta property="og:description" content={tour.description} />
-      <meta property="og:image" content={tour.imageURL} />
-      <meta property="og:url" content={`https://yourwebsite.com/tours/${slug}`} />
-      <meta property='og:keywords' content={tour.tags ? tagKeys.map(key => tour.tags![key].name).join(', ') : ''} />
-      <link rel="canonical" href={`https://yourwebsite.com/tours/${slug}`} />
-    </Head>
-    <div className="flex flex-col mt-24 md:flex-row gap-8 p-4 max-w-7xl mx-auto">
-      <div className="md:w-2/3">
-        <div className="mt-4">
-          <Link href="/tours" className="inline-flex items-center text-blue-600 hover:text-blue-800">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to all tours
-          </Link>
-        </div>
-        
-        <div className='mt-5'>
-          <h1 className='text-3xl font-bold text-gray-800'>{tour.title}</h1>
-          {tour.categoryDetails && (
-            <Link href={`/tours/${tour.categoryDetails.slug}`}>
-              <h1 className='text-blue-500 text-sm font-medium p-1 rounded-sm hover:text-blue-600 transition-colors duration-200'>{tour.categoryDetails.name}</h1>
+      <Head>
+        <title>{tour.title} - Tour Details</title>
+        <meta name="description" content={tour.description} />
+        <meta property="og:title" content={tour.title} />
+        <meta property="og:description" content={tour.description} />
+        <meta property="og:image" content={tour.imageURL} />
+        <meta property="og:url" content={`https://yourwebsite.com/tours/${slug}`} />
+        <meta property='og:keywords' content={tour.tags ? tagKeys.map(key => tour.tags![key].name).join(', ') : ''} />
+        <link rel="canonical" href={`https://yourwebsite.com/tours/${slug}`} />
+      </Head>
+      <div className="flex flex-col mt-24 md:flex-row gap-8 p-4 max-w-7xl mx-auto">
+        <div className="md:w-2/3">
+          <div className="mt-4">
+            <Link href="/tours" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to all tours
             </Link>
-          )}
-         <p className='text-gray-600 mt-2 max-w-3xl leading-relaxed'>
-  {tour.description.length > 500 
-    ? `${tour.description.substring(0, 500)}...` 
-    : tour.description}
-</p>
-          <div className="mt-6 relative h-96 w-full">
-            <Image
-              src={tour.imageURL}
-              className="object-cover rounded-lg shadow-md"
-              alt={tour.title}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              priority
-            />
           </div>
+          
+          <div className='mt-5'>
+            <h1 className='text-3xl font-bold text-gray-800'>{tour.title}</h1>
+            {tour.categoryDetails && (
+              <Link href={`/tours/${tour.categoryDetails.slug}`}>
+                <h1 className='text-blue-500 text-sm font-medium p-1 rounded-sm hover:text-blue-600 transition-colors duration-200'>{tour.categoryDetails.name}</h1>
+              </Link>
+            )}
+            <p className='text-gray-600 mt-2 max-w-3xl leading-relaxed'>
+              {tour.description.length > 500 
+                ? `${tour.description.substring(0, 500)}...` 
+                : tour.description}
+            </p>
+            <div className="mt-6 relative h-96 w-full">
+              <Image
+                src={tour.imageURL}
+                className="object-cover rounded-lg shadow-md"
+                alt={tour.title}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                priority
+              />
+            </div>
+          </div>
+          
+          <h1 className='text-2xl font-bold mt-8 text-gray-800'>Details</h1>
+          <div className='m-4'>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
+              <div className='flex items-center'>
+                <CalendarIcon className='h-10 w-10 text-blue-500' />
+                <div className='ml-2'>
+                  <p className='text-lg'>{tour.numberofDays} Days / {tour.numberofNights} Nights</p>
+                  <p className='text-sm text-gray-500'></p>
+                </div>
+              </div>
+              <div className='flex items-center'>
+                <MapPinIcon className='h-10 w-10 text-blue-500' />
+                <p className='ml-2 text-lg'>{tour.location}</p>
+              </div>
+              <div className='flex items-center'>
+                <CurrencyRupeeIcon className='h-10 w-10 text-blue-500' />
+                <div className='ml-2'>
+                  <p className='text-lg font-semibold'>{formatPrice(tour.price)}</p>
+                  {tour.flightIncluded && (
+                    <p className='text-sm text-green-600'>Flight included</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h1 className='text-2xl font-bold mt-8 text-gray-800'>Tour Itinerary</h1>
+          
+          {/* Day Filter Navigation */}
+          {dayKeys.length > 0 && (
+            <div className="mb-6">
+              <div className="flex flex-wrap gap-2">
+                {dayKeys.map((dayKey) => {
+                  const dayNumber = dayKey.replace('Day', '');
+                  return (
+                    <button
+                      key={dayKey}
+                      onClick={() => handleDaySelect(dayKey)}
+                      className={`px-4 py-2 rounded-md ${selectedDay === dayKey ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                    >
+                      Day {dayNumber}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
+          <div className='m-4'>
+            <div className="space-y-6">
+              {tour.itenaries && Object.keys(tour.itenaries).length > 0 ? (
+                dayKeys.map((dayKey) => {
+                  const day = tour.itenaries[dayKey];
+                  const dayNumber = dayKey.replace('Day', '');
+                  
+                  return (
+                    <div 
+                      key={dayKey} 
+                     ref={(el) => {
+  dayRefs.current[dayKey] = el;
+}}
+
+                      className="bg-gray-50 rounded-lg p-6 shadow-sm"
+                    >
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                        Day {dayNumber}: {day.title}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {day.description}
+                      </p>
+                      
+                      {day.imageURL && day.imageURL.length > 0 && (
+                        <div className="mt-4 relative px-4">
+                          <Slider
+                            dots={true}
+                            infinite={true}
+                            speed={1000}
+                            autoplay={true}
+                            autoplaySpeed={2000}
+                            slidesToShow={2}
+                            slidesToScroll={1}
+                            adaptiveHeight={true}
+                            arrows={true}
+                            className="rounded-md overflow-hidden"
+                            responsive={[
+                              {
+                                breakpoint: 1024,
+                                settings: {
+                                  slidesToShow: 2,
+                                  slidesToScroll: 1
+                                }
+                              },
+                              {
+                                breakpoint: 768,
+                                settings: {
+                                  slidesToShow: 1,
+                                  slidesToScroll: 1
+                                }
+                              }
+                            ]}
+                          >
+                            {day.imageURL.map((img, idx) => (
+                              <div key={idx} className="relative h-[400px] w-full px-2">
+                                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg">
+                                  <Image
+                                    src={img}
+                                    alt={`Day ${dayNumber} Image ${idx + 1}`}
+                                    fill
+                                    className="object-cover hover:scale-105 transition-transform duration-300"
+                                    priority={idx === 0}
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </Slider>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-gray-500 italic">No itinerary details available for this tour.</p>
+              )}
+            </div>
+          </div>
+          
+          {tagKeys.length > 0 && (
+            <div className="m-4">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <TagIcon className="h-6 w-6 text-blue-500 mr-2" />
+                Tour Tags
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {tagKeys.map((tagKey) => {
+                  const tag = tour.tags![tagKey];
+                  return (
+                    <Link 
+                      key={tagKey} 
+                      href={`/tour-tags/${tag.slug}`}
+                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+                    >
+                      {tag.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
         
-        <h1 className='text-2xl font-bold mt-8 text-gray-800'>Details</h1>
-        <div className='m-4'>
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
-            <div className='flex items-center'>
-              <CalendarIcon className='h-10 w-10 text-blue-500' />
-              <div className='ml-2'>
-                <p className='text-lg'>{tour.numberofDays} Days / {tour.numberofNights} Nights</p>
-                <p className='text-sm text-gray-500'>
-                 
-                </p>
+        <div className="md:w-1/3 space-y-6 mt-16">
+          <div className="mt-12 bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Request More Information</h2>
+            
+            {formSubmitted ? (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
+                Thank you for your inquiry! We'll contact you shortly.
               </div>
-            </div>
-            <div className='flex items-center'>
-              <MapPinIcon className='h-10 w-10 text-blue-500' />
-              <p className='ml-2 text-lg'>{tour.location}</p>
-            </div>
-            <div className='flex items-center'>
-              <CurrencyRupeeIcon className='h-10 w-10 text-blue-500' />
-              <div className='ml-2'>
-                <p className='text-lg font-semibold'>{formatPrice(tour.price)}</p>
-                {tour.flightIncluded && (
-                  <p className='text-sm text-green-600'>Flight included</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <h1 className='text-2xl font-bold mt-8 text-gray-800'>Tour Itinerary</h1>
-        <div className='m-4'>
-          <div className="space-y-6">
-            {tour.itenaries && Object.keys(tour.itenaries).length > 0 ? (
-              dayKeys.map((dayKey) => {
-                const day = tour.itenaries[dayKey];
-                const dayNumber = dayKey.replace('Day', '');
-                
-                return (
-                  <div key={dayKey} className="bg-gray-50 rounded-lg p-6 shadow-sm">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                      Day {dayNumber}: {day.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      {day.description}
-                    </p>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {user ? (
+                  <>
+                    <div className="flex items-center space-x-4 bg-blue-50 p-4 rounded-lg">
+                      <div className="bg-blue-100 p-3 rounded-full">
+                        <UserIcon className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-800">{userData?.name || user.displayName || 'User'}</p>
+                        <p className="text-sm text-gray-600">{userData?.email || user.email}</p>
+                        {userData?.phone && <p className="text-sm text-gray-600">{userData.phone}</p>}
+                      </div>
+                    </div>
                     
-                    {day.imageURL && day.imageURL.length > 0 && (
-                      <div className="mt-4 relative px-4">
-                        <Slider
-                          dots={true}
-                          infinite={true}
-                          speed={1000}
-                          autoplay={true}
-                          autoplaySpeed={2000}
-                          slidesToShow={2}
-                          slidesToScroll={1}
-                          adaptiveHeight={true}
-                          arrows={true}
-                          className="rounded-md overflow-hidden"
-                          responsive={[
-                            {
-                              breakpoint: 1024,
-                              settings: {
-                                slidesToShow: 2,
-                                slidesToScroll: 1
-                              }
-                            },
-                            {
-                              breakpoint: 768,
-                              settings: {
-                                slidesToShow: 1,
-                                slidesToScroll: 1
-                              }
-                            }
-                          ]}
-                        >
-                          {day.imageURL.map((img, idx) => (
-                            <div key={idx} className="relative h-[400px] w-full px-2">
-                              <div className="relative w-full h-full rounded-xl overflow-hidden shadow-lg">
-                                <Image
-                                  src={img}
-                                  alt={`Day ${dayNumber} Image ${idx + 1}`}
-                                  fill
-                                  className="object-cover hover:scale-105 transition-transform duration-300"
-                                  priority={idx === 0}
-                                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </Slider>
+                    {!userData?.phone && (
+                      <div className=''>
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone Number <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <PhoneIcon className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <MobileNumberInput 
+                            value={formData.phone}
+                            onChange={handlePhoneChange}
+                            required
+                          />
+                        </div>
                       </div>
                     )}
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-gray-500 italic">No itinerary details available for this tour.</p>
-            )}
-          </div>
-        </div>
-        
-        {tagKeys.length > 0 && (
-          <div className="m-4">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-              <TagIcon className="h-6 w-6 text-blue-500 mr-2" />
-              Tour Tags
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {tagKeys.map((tagKey) => {
-                const tag = tour.tags![tagKey];
-                return (
-                  <Link 
-                    key={tagKey} 
-                    href={`/tour-tags/${tag.slug}`}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
-                  >
-                    {tag.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-      
-      <div className="md:w-1/3 space-y-6 mt-16">
-        <div className="mt-12 bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Request More Information</h2>
-          
-          {formSubmitted ? (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-              Thank you for your inquiry! We'll contact you shortly.
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {user ? (
-                <>
-                  <div className="flex items-center space-x-4 bg-blue-50 p-4 rounded-lg">
-                    <div className="bg-blue-100 p-3 rounded-full">
-                      <UserIcon className="h-6 w-6 text-blue-600" />
-                    </div>
+                  </>
+                ) : (
+                  <>
                     <div>
-                      <p className="font-medium text-gray-800">{userData?.name || user.displayName || 'User'}</p>
-                      <p className="text-sm text-gray-600">{userData?.email || user.email}</p>
-                      {userData?.phone && <p className="text-sm text-gray-600">{userData.phone}</p>}
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                        Name <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <UserIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="text"
+                          id="name"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          required
+                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                          placeholder="Your name"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  
-                  {!userData?.phone && (
+                    
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          required
+                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                          placeholder="Your email"
+                        />
+                      </div>
+                    </div>
+                    
                     <div>
                       <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                         Phone Number <span className="text-red-500">*</span>
@@ -523,122 +618,61 @@ export default function TourDetailPage() {
                         />
                       </div>
                     </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Name <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <UserIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                        className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                        placeholder="Your name"
+                  </>
+                )}
+                
+                <div>
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
+                  >
+                    {user ? 'Request a Call Back' : 'Submit Inquiry'}
+                  </button>
+                </div>
+                
+                {!user && (
+                  <p className="text-sm text-gray-500">
+                    Already have an account?{' '}
+                    <Link href="/signin" className="text-blue-600 hover:text-blue-800">
+                      Log in
+                    </Link>
+                  </p>
+                )}
+              </form>
+            )}
+          </div>
+        
+          {relatedTours.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Related Tours</h3>
+              <div className="space-y-4">
+                {relatedTours.map((tour) => (
+                  <Link 
+                    key={tour.id} 
+                    href={`/tours/${tour.slug}`}
+                    className="flex items-start space-x-4 group"
+                  >
+                    <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
+                      <Image
+                        src={tour.imageURL}
+                        alt={tour.title}
+                        fill
+                        className="object-cover group-hover:opacity-90 transition-opacity"
                       />
                     </div>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <EnvelopeIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                        placeholder="Your email"
-                      />
+                    <div>
+                      <h4 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
+                        {tour.title}
+                      </h4>
+                      <p className="text-sm text-blue-600 font-medium">{formatPrice(tour.price)}</p>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <PhoneIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <MobileNumberInput 
-                        value={formData.phone}
-                        onChange={handlePhoneChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-              
-              <div>
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
-                >
-                  {user ? 'Request a Call Back' : 'Submit Inquiry'}
-                </button>
-              </div>
-              
-              {!user && (
-                <p className="text-sm text-gray-500">
-                  Already have an account?{' '}
-                  <Link href="/signin" className="text-blue-600 hover:text-blue-800">
-                    Log in
                   </Link>
-                </p>
-              )}
-            </form>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-      
-        {relatedTours.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Related Tours</h3>
-            <div className="space-y-4">
-              {relatedTours.map((tour) => (
-                <Link 
-                  key={tour.id} 
-                  href={`/tours/${tour.slug}`}
-                  className="flex items-start space-x-4 group"
-                >
-                  <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
-                    <Image
-                      src={tour.imageURL}
-                      alt={tour.title}
-                      fill
-                      className="object-cover group-hover:opacity-90 transition-opacity"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
-                      {tour.title}
-                    </h4>
-                    <p className="text-sm text-blue-600 font-medium">{formatPrice(tour.price)}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
-    </div>
     </>
   );
 }

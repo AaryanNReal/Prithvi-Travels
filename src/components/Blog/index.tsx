@@ -10,26 +10,27 @@ interface BlogPost {
   title: string;
   slug: string;
   description: string;
+  content: string;
   createdAt: any;
-  image: {
-    imageURL: string;
-    altText?: string;
-  };
-  category: {
+  imageURL: string;
+  isFeatured: boolean;
+  categoryDetails: {
+    categoryID: string;
     name: string;
     slug: string;
   };
-  createdBy?: {
-    name: string;
-    image?: string;
-    description?: string;
+  seoDetails?: {
+    description: string;
+    imageURL: string;
+    keywords: string[];
+    title: string;
   };
   tags?: Record<string, {
     name: string;
     slug: string;
-    description?: string;
+    description: string;
   }>;
-  isFeatured?: boolean;
+  updatedAt?: any;
 }
 
 export default function FeaturedPosts() {
@@ -85,15 +86,23 @@ export default function FeaturedPosts() {
               title: data.title,
               slug: data.slug,
               description: data.description,
+              content: data.content,
               createdAt: data.createdAt,
-              image: {
-                imageURL: data.image?.imageURL,
-                altText: data.image?.altText
+              imageURL: data.imageURL,
+              isFeatured: data.isFeatured,
+              categoryDetails: {
+                categoryID: data.categoryDetails?.categoryID,
+                name: data.categoryDetails?.name,
+                slug: data.categoryDetails?.slug
               },
-              category: data.category,
-              createdBy: data.createdBy,
+              seoDetails: data.seoDetails ? {
+                description: data.seoDetails.description,
+                imageURL: data.seoDetails.imageURL,
+                keywords: data.seoDetails.keywords,
+                title: data.seoDetails.title
+              } : undefined,
               tags: data.tags,
-              isFeatured: true
+              updatedAt: data.updatedAt
             });
           });
           setFeaturedPosts(postsData);
@@ -193,14 +202,12 @@ export default function FeaturedPosts() {
                         title={post.title}
                         description={post.description}
                         createdAt={post.createdAt?.toDate?.() ? post.createdAt.toDate().toISOString() : new Date().toISOString()}
-                        imageUrl={post.image.imageURL}
-                        imageAlt={post.image.altText}
-                        category={post.category}
-                        author={post.createdBy ? {
-                          name: post.createdBy.name,
-                          image: post.createdBy.image,
-                          role: post.createdBy.description
-                        } : undefined}
+                        imageUrl={post.imageURL}
+                        imageAlt={post.title}
+                        categoryDetails={{
+                          name: post.categoryDetails.name,
+                          slug: post.categoryDetails.slug
+                        }}
                       />
                     </div>
                   ))}

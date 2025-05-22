@@ -12,7 +12,7 @@ interface BlogCardProps {
   updatedAt?: string;
   imageUrl: string;
   imageAlt?: string;
-  category: {
+  categoryDetails: {
     name: string;
     slug: string;
   };
@@ -40,7 +40,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
   updatedAt,
   imageUrl,
   imageAlt = "",
-  category,
+  categoryDetails,
   isFeatured = false,
   author,
   tags = [],
@@ -67,7 +67,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
 
   return (
     <Link 
-      href={`/blog/${category.slug}/${slug}`} 
+      href={`/blog/${categoryDetails.slug}/${slug}`} 
       className="block group mb-6 hover:no-underline"
       aria-label={`Read more about ${title}`}
     >
@@ -76,7 +76,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
         bg-white dark:bg-gray-800 transition-all duration-300 ease-in-out
         border border-gray-200 dark:border-gray-700
         hover:shadow-xl hover:border-blue-500 dark:hover:border-blue-400
-        ${isFeatured ? 'ring-2 ring-yellow-400 dark:ring-yellow-500' : ''}
+      
       `}>
         {/* Image with badges */}
         <div className="relative ">
@@ -93,7 +93,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
          
           {/* Category badge */}
           <span className="absolute top-2 right-3 bg-blue-600 text-white text-sm font-medium px-3 py-1 rounded-full shadow-md">
-            {category.name}
+            {categoryDetails.name}
           </span>
         </div>
 

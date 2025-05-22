@@ -63,10 +63,9 @@ export default function Home() {
       <Cruises/>
       
       <Brands />
-      
+      <Blog/>
       <Testimonials />
-      
-      <Blog />
+  
       
     </>
   );

@@ -138,7 +138,7 @@ export default function TagPage() {
               createdAt={post.createdAt?.toDate().toISOString() || new Date().toISOString()}
               imageUrl={post.image.imageURL}
               imageAlt={post.image.altText}
-              category={post.category}
+              categoryDetails={post.category}
               
               author={post.createdBy ? {
                 name: post.createdBy.name,

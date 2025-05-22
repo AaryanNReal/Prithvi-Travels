@@ -9,17 +9,36 @@ interface Blog {
   title: string;
   slug: string;
   description: string;
+  content: string;
   createdAt: { seconds: number; nanoseconds: number };
-  imageUrl: string;
-  category: {
+  updatedAt?: { seconds: number; nanoseconds: number };
+  imageURL: string;
+  isFeatured?: boolean;
+  categoryDetails: {
+    categoryID: string;
     name: string;
     slug: string;
+    description: string;
+    createdAt: { seconds: number; nanoseconds: number };
   };
   createdBy?: {
     name: string;
     image?: string;
     description?: string;
   };
+  seoDetails?: {
+    description: string;
+    imageURL: string;
+    keywords: string[];
+    title: string;
+  };
+  tags?: Record<string, {
+    description: string;
+    name: string;
+    slug: string;
+    title: string;
+    updatedAt: { seconds: number; nanoseconds: number };
+  }>;
 }
 
 export default function BlogList() {
@@ -34,19 +53,36 @@ export default function BlogList() {
         setError(null);
         
         const querySnapshot = await getDocs(collection(db, "blogs"));
-        const blogData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          title: doc.data().title || "Untitled Blog",
-          slug: doc.data().slug,
-          description: doc.data().description || "",
-          createdAt: doc.data().createdAt || { seconds: Date.now() / 1000 },
-          imageUrl: doc.data().image?.imageURL || "/default-blog-image.jpg",
-          category: {
-            name: doc.data().category?.name || "Uncategorized",
-            slug: doc.data().category?.slug || "uncategorized"
-          },
-          createdBy: doc.data().createdBy,
-        }));
+        const blogData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          
+          return {
+            id: doc.id,
+            title: data.title || "Untitled Blog",
+            slug: data.slug,
+            description: data.description || "",
+            content: data.content || "",
+            createdAt: data.createdAt || { seconds: Date.now() / 1000 },
+            updatedAt: data.updatedAt,
+            imageURL: data.imageURL || "/default-blog-image.jpg",
+            isFeatured: data.isFeatured || false,
+            categoryDetails: {
+              categoryID: data.categoryDetails?.categoryID || "",
+              name: data.categoryDetails?.name || "Uncategorized",
+              slug: data.categoryDetails?.slug || "uncategorized",
+              description: data.categoryDetails?.description || "",
+              createdAt: data.categoryDetails?.createdAt || { seconds: Date.now() / 1000 }
+            },
+            createdBy: data.createdBy,
+            seoDetails: data.seoDetails ? {
+              description: data.seoDetails.description || "",
+              imageURL: data.seoDetails.imageURL || "",
+              keywords: data.seoDetails.keywords || [],
+              title: data.seoDetails.title || ""
+            } : undefined,
+            tags: data.tags
+          };
+        });
 
         await new Promise(resolve => setTimeout(resolve, 300));
         setBlogs(blogData);
@@ -72,19 +108,13 @@ export default function BlogList() {
 
   return (
     <div className="container px-5 py-10 mx-auto max-w-6xl">
-      {/* Left-aligned Blog Page Header Section */}
       <div className="mb-16 mt-20">
         <div className="max-w-2xl">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Blogs</h1>
-          
-          
-          
         </div>
-        
         <div className="border-b border-gray-200 dark:border-gray-700 w-full mt-8"></div>
       </div>
 
-      {/* Blog Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {loading ? (
           Array.from({ length: 6 }).map((_, index) => (
@@ -114,23 +144,33 @@ export default function BlogList() {
           </div>
         ) : ( 
           blogs.map((blog) => (
-           <div 
-  key={blog.id} 
-  className="w-full md:w-11/12 lg:w-4/5 xl:w-3/4 mx-auto p-4 md:p-6 my-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300"
->
+            <div 
+              key={blog.id} 
+              className="w-full bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300"
+            >
               <BlogCard
                 id={blog.id}
                 title={blog.title}
                 slug={blog.slug}
                 description={blog.description}
+                content={blog.content}
                 createdAt={new Date(blog.createdAt.seconds * 1000).toISOString()}
-                imageUrl={blog.imageUrl}
-                category={blog.category}
+                updatedAt={blog.updatedAt ? new Date(blog.updatedAt.seconds * 1000).toISOString() : undefined}
+                imageUrl={blog.imageURL}
+                isFeatured={blog.isFeatured}
+                categoryDetails={{
+                
+                  name: blog.categoryDetails.name,
+                  slug: blog.categoryDetails.slug,
+                
+                }}
                 author={blog.createdBy ? {
                   name: blog.createdBy.name,
                   image: blog.createdBy.image,
                   role: blog.createdBy.description
                 } : undefined}
+                
+                
               />
             </div>
           ))

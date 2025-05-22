@@ -1,4 +1,3 @@
-// app/blog/[category]/page.tsx
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -14,25 +13,37 @@ interface BlogPost {
   title: string;
   slug: string;
   description: string;
-  createdAt: any;
-  image: {
-    imageURL: string;
-    altText?: string;
-  };
-  category: {
+  content: string;
+  createdAt: { seconds: number; nanoseconds: number };
+  updatedAt?: { seconds: number; nanoseconds: number };
+  imageURL: string;
+  isFeatured?: boolean;
+  categoryDetails: {
+    categoryID: string;
     name: string;
     slug: string;
+    description: string;
+    content?: string;
+    createdAt: { seconds: number; nanoseconds: number };
   };
   createdBy?: {
     name: string;
     image?: string;
     description?: string;
   };
+  seoDetails?: {
+    description: string;
+    imageURL: string;
+    keywords: string[];
+    title: string;
+  };
   tags?: Record<string, {
+    description: string;
     name: string;
     slug: string;
+    title: string;
+    updatedAt: { seconds: number; nanoseconds: number };
   }>;
-  isFeatured?: boolean;
 }
 
 export default function CategoryPage() {
@@ -53,43 +64,52 @@ export default function CategoryPage() {
         setLoading(true);
         setError('');
         setIndexError(false);
-        
+
         const blogsRef = collection(db, 'blogs');
         const q = query(
           blogsRef,
-          where('category.slug', '==', categorySlug),
+          where('categoryDetails.slug', '==', categorySlug),
           orderBy('createdAt', 'desc')
         );
 
         const querySnapshot = await getDocs(q);
-        
+
         if (querySnapshot.empty) {
           setError('No posts found in this category');
         } else {
           const postsData: BlogPost[] = [];
           querySnapshot.forEach((doc) => {
             const data = doc.data();
-            postsData.push({
+
+            const category = data.categoryDetails || {};
+
+            const post: BlogPost = {
               id: doc.id,
-              title: data.title,
+              title: data.title || "Untitled Post",
               slug: data.slug,
-              description: data.description,
-              createdAt: data.createdAt,
-              image: {
-                imageURL: data.image?.imageURL,
-                altText: data.image?.altText
-              },
-              category: {
-                name: data.category.name,
-                slug: data.category.slug
+              description: data.description || "",
+              content: data.content || "",
+              createdAt: data.createdAt || { seconds: Date.now() / 1000, nanoseconds: 0 },
+              updatedAt: data.updatedAt,
+              imageURL: data.imageURL || "/default-blog-image.jpg",
+              isFeatured: data.isFeatured || false,
+              categoryDetails: {
+                categoryID: category.categoryID || "",
+                name: category.name || "Uncategorized",
+                slug: category.slug || "uncategorized",
+                description: category.description || "",
+                content: category.content || "",
+                createdAt: category.createdAt || { seconds: Date.now() / 1000, nanoseconds: 0 }
               },
               createdBy: data.createdBy,
-              tags: data.tags,
-              isFeatured: data.isFeatured
-            });
-            
+              seoDetails: data.seoDetails,
+              tags: data.tags
+            };
+
+            postsData.push(post);
+
             if (postsData.length === 1) {
-              setCategoryName(data.category.name);
+              setCategoryName(post.categoryDetails.name);
             }
           });
           setPosts(postsData);
@@ -110,31 +130,35 @@ export default function CategoryPage() {
     fetchCategoryPosts();
   }, [categorySlug]);
 
-  if (loading) return (
-    <div className="flex justify-center items-center min-h-[50vh]">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  );
-
-  if (indexError) return (
-    <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 inline-flex flex-col items-center max-w-2xl mx-auto">
-        <ExclamationTriangleIcon className="h-12 w-12 text-yellow-500 mb-4" />
-        <h2 className="text-xl font-bold text-yellow-800 mb-2">Index Configuration Required</h2>
-        <p className="text-yellow-700 mb-4">
-          This query requires a Firestore index to be created. Please ask your administrator to set this up.
-        </p>
-        <a
-          href="https://console.firebase.google.com/v1/r/project/pruthvi-travels-6d10a/firestore/indexes?create_composite=ClNwcm9qZWN0cy9wcnV0aHZpLXRyYXZlbHMtNmQxMGEvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2Jsb2dzL2luZGV4ZXMvXxABGhEKDWNhdGVnb3J5LnNsdWcQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
-        >
-          Create Index Now
-        </a>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (indexError) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8 text-center">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 inline-flex flex-col items-center max-w-2xl mx-auto">
+          <ExclamationTriangleIcon className="h-12 w-12 text-yellow-500 mb-4" />
+          <h2 className="text-xl font-bold text-yellow-800 mb-2">Index Configuration Required</h2>
+          <p className="text-yellow-700 mb-4">
+            This query requires a Firestore index to be created. Please ask your administrator to set this up.
+          </p>
+          <a
+            href="https://console.firebase.google.com/v1/r/project/pruthvi-travels-6d10a/firestore/indexes?create_composite=ClNwcm9qZWN0cy9wcnV0aHZpLXRyYXZlbHMtNmQxMGEvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL2Jsb2dzL2luZGV4ZXMvXxABGhEKDWNhdGVnb3J5LnNsdWcQARoNCgljcmVhdGVkQXQQAhoMCghfX25hbWVfXxAC"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+          >
+            Create Index Now
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mt-24 mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -163,20 +187,26 @@ export default function CategoryPage() {
               slug={post.slug}
               title={post.title}
               description={post.description}
-              createdAt={post.createdAt?.toDate().toISOString() || new Date().toISOString()}
-              imageUrl={post.image.imageURL}
-              imageAlt={post.image.altText}
-              category={post.category}
-              
-                author={post.createdBy ? {
-                  name: post.createdBy.name,
-                  image: post.createdBy.image,
-                  role: post.createdBy.description
-                } : undefined}
+              content={post.content}
+              createdAt={new Date(post.createdAt.seconds * 1000).toISOString()}
+              updatedAt={post.updatedAt ? new Date(post.updatedAt.seconds * 1000).toISOString() : undefined}
+              imageUrl={post.imageURL}
+              isFeatured={post.isFeatured}
+              categoryDetails={{
+                name: post.categoryDetails.name,
+                slug: post.categoryDetails.slug,
+              }}
+              author={post.createdBy ? {
+                name: post.createdBy.name,
+                image: post.createdBy.image,
+                role: post.createdBy.description
+              } : undefined}
               tags={post.tags ? Object.values(post.tags).map(tag => ({
                 id: tag.slug,
                 name: tag.name,
-                slug: tag.slug
+                slug: tag.slug,
+                description: tag.description,
+                title: tag.title
               })) : []}
             />
           ))}

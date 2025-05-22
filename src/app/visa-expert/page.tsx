@@ -158,7 +158,7 @@ export default function VisaExpertPage() {
               createdAt={post.createdAt?.toDate().toISOString() || new Date().toISOString()}
               imageUrl={post.image.imageURL}
               imageAlt={post.image.altText}
-              category={post.category}
+              categoryDetails={post.category}
               author={post.createdBy ? {
                 name: post.createdBy.name,
                 image: post.createdBy.image,

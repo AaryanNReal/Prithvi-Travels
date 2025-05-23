@@ -4,54 +4,47 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "@/app/lib/firebase"; // Adjust the path to your Firebase config
+import { auth } from "@/app/lib/firebase";
 import menuData from "./menuData";
 import SignOutDropdown from "./signout";
+import ItineraryModal from "../ItineraryModal"; // Make sure this component exists
 
 const Header = () => {
-  // Navbar toggle
+  const pathname = usePathname();
+  const dropdownRef = useRef(null);
+
+  // State management
   const [navbarOpen, setNavbarOpen] = useState(false);
-  const navbarToggleHandler = () => {
+  const [sticky, setSticky] = useState(false);
+  const [openIndex, setOpenIndex] = useState(-1);
+  const [user, setUser] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // Toggle mobile navbar
+  const toggleNavbar = () => {
     setNavbarOpen(!navbarOpen);
   };
 
-  // Sticky Navbar
-  const [sticky, setSticky] = useState(false);
-  const handleStickyNavbar = () => {
-    if (window.scrollY >= 80) {
-      setSticky(true);
-    } else {
-      setSticky(false);
-    }
-  };
+  // Handle sticky navbar on scroll
   useEffect(() => {
-    window.addEventListener("scroll", handleStickyNavbar);
-    return () => {
-      window.removeEventListener("scroll", handleStickyNavbar);
+    const handleScroll = () => {
+      setSticky(window.scrollY >= 80);
     };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // submenu handler
-  const [openIndex, setOpenIndex] = useState(-1);
+  // Handle submenu toggle
   const handleSubmenu = (index) => {
-    if (openIndex === index) {
-      setOpenIndex(-1);
-    } else {
-      setOpenIndex(index);
-    }
+    setOpenIndex(openIndex === index ? -1 : index);
   };
 
-  const usePathName = usePathname();
-
-  // Authentication state
-  const [user, setUser] = useState(null);
-
+  // Auth state listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
-
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
@@ -64,23 +57,25 @@ const Header = () => {
   };
 
   // Close dropdown when clicking outside
-  const dropdownRef = useRef(null);
-
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Only run if the left mouse button was clicked
-      if (event.button !== 0) return;
-    
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpenIndex(-1); // Close the dropdown
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenIndex(-1);
       }
     };
-    
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Handle menu item clicks
+  const handleMenuItemClick = (item) => {
+    if (item.onClick === 'openItineraryModal') {
+      setModalOpen(true);
+    }
+    if (navbarOpen) {
+      setNavbarOpen(false); // Close mobile menu on click
+    }
+  };
 
   return (
     <>
@@ -91,13 +86,13 @@ const Header = () => {
             : "absolute bg-transparent"
         }`}
       >
-        <div className="container">
-          <div className="relative -mx-4 flex items-center justify-between">
-            <div className="w- max-w-full px-4 xl:mr-12">
+        <div className="container ">
+          <div className="relative  flex items-center justify-between">
+            <div className="w- max-w-full px-3 xl:mr-10">
               <Link
                 href="/"
                 className={`header-logo block w-full ${
-                  sticky ? "py-3 lg:py-2" : "py-8"
+                  sticky ? "py-3 lg:py-2" : "py-6"
                 } `}
               >
                 <Image
@@ -112,31 +107,31 @@ const Header = () => {
                   alt="logo"
                   width={100}
                   height={10}
-                  className="hidden  dark:block"
+                  className="hidden dark:block"
                 />
               </Link>
             </div>
-            <div className="flex w-full items-center justify-between px-4">
+            <div className="flex w-full items-center justify-between px-2">
               <div>
                 <button
-                  onClick={navbarToggleHandler}
+                  onClick={toggleNavbar}
                   id="navbarToggler"
                   aria-label="Mobile Menu"
                   className="ring-primary absolute top-1/2 right-4 block translate-y-[-50%] rounded-lg px-3 py-[6px] focus:ring-2 lg:hidden"
                 >
                   <span
                     className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
-                      navbarOpen ? "top-[7px] rotate-45" : " "
+                      navbarOpen ? "top-[7px] rotate-45" : ""
                     }`}
                   />
                   <span
                     className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
-                      navbarOpen ? "opacity-0" : " "
+                      navbarOpen ? "opacity-0" : ""
                     }`}
                   />
                   <span
                     className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
-                      navbarOpen ? "top-[-8px] -rotate-45" : " "
+                      navbarOpen ? "top-[-8px] -rotate-45" : ""
                     }`}
                   />
                 </button>
@@ -151,18 +146,27 @@ const Header = () => {
                   <ul className="block lg:flex lg:space-x-11" ref={dropdownRef}>
                     {menuData.map((menuItem, index) => (
                       <li key={index} className="group relative">
-                        {menuItem.path ? (
-                          <Link
-                            href={menuItem.path}
-                            className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${
-                              usePathName === menuItem.path
-                                ? "text-dark hover:text-primary"
-                                : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
-                            }`}
-                          >
-                            {menuItem.title}
-                          </Link>
-                        ) : (
+                        {menuItem.path && !menuItem.submenu ? (
+                          menuItem.isbutton ? (
+                            <button
+                              onClick={() => handleMenuItemClick(menuItem)}
+                              className="flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                            >
+                              {menuItem.title}
+                            </button>
+                          ) : (
+                            <Link
+                              href={menuItem.path}
+                              className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${
+                                pathname === menuItem.path
+                                  ? "text-dark hover:text-primary"
+                                  : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                              }`}
+                            >
+                              {menuItem.title}
+                            </Link>
+                          )
+                        ) : menuItem.submenu ? (
                           <>
                             <p
                               onClick={() => handleSubmenu(index)}
@@ -196,45 +200,46 @@ const Header = () => {
                               ))}
                             </div>
                           </>
-                        )}
+                        ) : null}
                       </li>
                     ))}
                   </ul>
                 </nav>
               </div>
               <div className="flex items-center justify-end pr-16 lg:pr-0">
-  {user ? (
-    <SignOutDropdown
-      
-      items={[
-        { label: "Profile", href: "/profile" },
-        { label: "My Bookings", href: "/mybooking" },
-        { label: "Help Desk", href: "/helpdesk" },
-        { label: "Sign Out", onClick: handleSignOut },
-      ]}
-    />
-  ) : (
-    <>
-      
-<Link
-  href="/signin"
-  className="text-dark text-sm md:text-base px-3 py-1.5 md:px-4 md:py-2 lg:px-8 lg:py-3 mr-2 font-medium hover:opacity-70 dark:text-white block md:inline-block"
->
-  Sign In
-</Link>
-<Link
-  href="/signup"
-  className="text-sm md:text-base px-3 py-1.5 md:px-4 md:py-2 lg:px-8 lg:py-3 font-medium transition duration-300 block md:inline-block md:bg-primary md:hover:bg-primary/90 md:rounded-xs md:shadow-btn md:hover:shadow-btn-hover md:text-white text-primary hover:opacity-70"
->
-  Sign Up
-</Link>
-    </>
-  )}
-</div>
+                {user ? (
+                  <SignOutDropdown
+                    items={[
+                      { label: "Profile", href: "/profile" },
+                      { label: "My Bookings", href: "/mybooking" },
+                      { label: "Help Desk", href: "/helpdesk" },
+                      { label: "Sign Out", onClick: handleSignOut },
+                    ]}
+                  />
+                ) : (
+                  <>
+                    <Link
+                      href="/signin"
+                      className="text-dark text-sm md:text-base px-3 py-1.5 md:px-4 md:py-2 lg:px-8 lg:py-3 mr-2 font-medium hover:opacity-70 dark:text-white block md:inline-block"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="text-sm md:text-base px-3 py-1.5 md:px-4 md:py-2 lg:px-8 lg:py-3 font-medium transition duration-300 block md:inline-block md:bg-primary md:hover:bg-primary/90 md:rounded-xs md:shadow-btn md:hover:shadow-btn-hover md:text-white text-primary hover:opacity-70"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Itinerary Modal */}
+      <ItineraryModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
     </>
   );
 };

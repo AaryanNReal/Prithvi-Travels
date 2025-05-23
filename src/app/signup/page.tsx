@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import MobileNumberInput from "@/components/PhoneInput";
 import { signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
 import { db, auth, provider } from "../lib/firebase"; 
-import { collection, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 const SignupPage = () => {
@@ -24,8 +24,14 @@ const SignupPage = () => {
     setPhoneNumber(value);
   };
 
-  // Sign up using email/password.
-  // Create a new user document with a custom document ID: UID{timestamp}
+  // Check if user with same UID already exists
+  const userExists = async (uid: string) => {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("uid", "==", uid));
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  };
+
   const handleSignup = async () => {
     setError("");
     setSuccess("");
@@ -56,23 +62,25 @@ const SignupPage = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create custom document ID instead of using user.uid
-      const timestampUID = `UID${Date.now()}`;
-      // Create a custom document reference in "users" collection
-      const userDocRef = doc(collection(db, "users"), timestampUID);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
-          userID: timestampUID, // custom document id saved in field userID
-          email,
-          name: fullName,
-          phone: phoneNumber,
-          uid: user.uid, // original firebase uid for reference
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+      // Check if user document with this UID already exists
+      if (await userExists(user.uid)) {
+        setError("An account with this email already exists");
+        setLoading(false);
+        return;
       }
+
+      // Create new user document with custom ID
+      const userDocRef = doc(collection(db, "users"));
+      await setDoc(userDocRef, {
+        userID: userDocRef.id, // Use the auto-generated document ID
+        email,
+        name: fullName,
+        phone: phoneNumber,
+        uid: user.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
       setSuccess(`Account successfully created for ${email}`);
       router.push("/");
     } catch (error: any) {
@@ -89,20 +97,17 @@ const SignupPage = () => {
     }
   };
 
-  // Sign in with Google.
-  // Create a new user document with a custom document ID if one doesn’t already exist.
   const signInWithGoogle = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      // Create custom document ID
-      const timestampUID = `UID${Date.now()}`;
-      // Create a reference with the custom ID
-      const userDocRef = doc(collection(db, "users"), timestampUID);
-      const userDoc = await getDoc(userDocRef);
-      if (!userDoc.exists()) {
+
+      // Check if user document with this UID already exists
+      if (!(await userExists(user.uid))) {
+        // Create new user document only if doesn't exist
+        const userDocRef = doc(collection(db, "users"));
         await setDoc(userDocRef, {
-          userID: timestampUID,
+          userID: userDocRef.id,
           email: user.email,
           name: user.displayName || "",
           photoURL: user.photoURL || "",
@@ -112,6 +117,7 @@ const SignupPage = () => {
           updatedAt: serverTimestamp(),
         });
       }
+
       router.push("/");
     } catch (error: any) {
       console.error("Sign-in error:", error);
@@ -213,7 +219,7 @@ const SignupPage = () => {
                     <label htmlFor="contact" className="mb-3 block text-sm text-dark dark:text-white">
                       Contact Number
                     </label>
-                    <MobileNumberInput onChange={(value) => setPhoneNumber(value)} />
+                    <MobileNumberInput onChange={handlePhoneChange} />
                   </div>
                   
                   <div className="mb-8">

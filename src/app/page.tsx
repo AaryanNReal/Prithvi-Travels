@@ -89,48 +89,49 @@ export default function Home() {
         <ScrollUp />
         
         {/* Hero Section with Enhanced Background */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 backdrop-blur-sm" />
+        <div className="relative ">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 " />
           <Hero />
         </div>
         
         {/* Domestic Section with Subtle Background */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-l from-teal-50/50 to-transparent" />
+          <div className="absolute  bg-gradient-to-l from-teal-50/50 to-transparent" />
           <Domestic />
         </div>
         
         {/* International Section with Enhanced Background */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-50/50 to-blue-50/50" />
+          <div className="absolute  bg-gradient-to-r from-purple-50/50 to-blue-50/50" />
           <International />
         </div>
         
         {/* Cruises Section with Ocean-inspired Background */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-cyan-50/40 to-blue-100/30" />
+          <div className="absolute bg-gradient-to-b from-cyan-50/40 to-blue-100/30" />
           <Cruises />
         </div>
         
         {/* Brands Section */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-slate-50/50" />
+          <div className="absolute  bg-gradient-to-r from-gray-50/50 to-slate-50/50" />
           <Brands />
         </div>
+
+        <div className="relative">
+          <div className="absolute  bg-gradient-to-r from-rose-50/40 to-pink-50/40" />
+          <Testimonials />
+        </div>
+      </div>
         
         {/* Blog Section */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-l from-yellow-50/30 to-orange-50/30" />
+          <div className="absolute  bg-gradient-to-l from-yellow-50/30 to-orange-50/30" />
           <Blog />
         </div>
         
         {/* Testimonials Section with Warm Background */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-rose-50/40 to-pink-50/40" />
-          <Testimonials />
-        </div>
-      </div>
-
+        
       {/* Custom CSS for enhanced animations */}
       <style jsx>{`
         @keyframes float {

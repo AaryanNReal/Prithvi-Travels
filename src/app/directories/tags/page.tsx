@@ -4,6 +4,12 @@ import { db } from '@/app/lib/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
 
+interface FirestoreTag {
+  name: string;
+  slug: string;
+  description?: string;
+}
+
 interface Tag {
   id: string;
   name: string;
@@ -25,11 +31,11 @@ const TagsPage = () => {
       try {
         // Fetch blog tags
         const blogsSnapshot = await getDocs(collection(db, 'blogs'));
-        const blogTags: {name: string, slug: string}[] = [];
+        const blogTags: {name: string, slug: string, type: 'blog'}[] = [];
         blogsSnapshot.forEach(doc => {
           const data = doc.data();
           if (data.tags && typeof data.tags === 'object') {
-            Object.values(data.tags).forEach((tag: any) => {
+            Object.values(data.tags as Record<string, FirestoreTag>).forEach(tag => {
               if (tag.name && tag.slug) {
                 blogTags.push({
                   name: tag.name,
@@ -43,11 +49,11 @@ const TagsPage = () => {
 
         // Fetch tour tags
         const toursSnapshot = await getDocs(collection(db, 'tours'));
-        const tourTags: {name: string, slug: string}[] = [];
+        const tourTags: {name: string, slug: string, type: 'tour'}[] = [];
         toursSnapshot.forEach(doc => {
           const data = doc.data();
           if (data.tags && typeof data.tags === 'object') {
-            Object.values(data.tags).forEach((tag: any) => {
+            Object.values(data.tags as Record<string, FirestoreTag>).forEach(tag => {
               if (tag.name && tag.slug) {
                 tourTags.push({
                   name: tag.name,
@@ -65,8 +71,8 @@ const TagsPage = () => {
 
         allTags.forEach(tag => {
           const key = `${tag.slug}-${tag.type}`;
-          if (tagMap.has(key)) {
-            const existing = tagMap.get(key)!;
+          const existing = tagMap.get(key);
+          if (existing) {
             tagMap.set(key, {
               ...existing,
               count: existing.count + 1

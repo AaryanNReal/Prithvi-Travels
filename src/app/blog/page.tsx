@@ -146,7 +146,7 @@ export default function BlogList() {
           blogs.map((blog) => (
             <div 
               key={blog.id} 
-              className="w-full bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300"
+              className=""
             >
               <BlogCard
                 id={blog.id}

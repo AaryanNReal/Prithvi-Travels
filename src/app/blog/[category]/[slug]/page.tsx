@@ -6,20 +6,20 @@ import BlogPostPage from './details';
 
 export async function generateMetadata(
   props: {
-    params: Promise<{ category: string; title: string }>;
+    params: Promise<{ category: string; slug: string }>;
   }
 ): Promise<Metadata> {
   const params = await props.params;
-  const { category, title } = params;
+  const { category, slug } = params;
   const baseUrl = 'https://prithvi-travels-36eo.vercel.app/';
 
   try {
     const blogsRef = collection(db, 'blogs');
     const q = query(
       blogsRef,
-      where('category.slug', '==', category),
-      where('slug', '==', title),
-      limit(1)
+      where('categoryDetails.slug', '==', category),
+      where('slug','==',slug),
+    
     );
     const querySnapshot = await getDocs(q);
 
@@ -36,8 +36,8 @@ export async function generateMetadata(
 
       const allKeywords = [...tags, ...defaultKeywords].filter(Boolean);
       const description = blog.summary || blog.description?.substring(0, 160) || 'Read this blog post';
-      const url = `${baseUrl}/blog/${category}/${title}`;
-      const imageUrl = blog.image?.imageURL || `${baseUrl}/default-image.jpg`;
+      const url = `${baseUrl}/blog/${category}/${slug}`;
+      const imageUrl = blog.imageURL || `${baseUrl}/default-image.jpg`;
 
       return {
         title: `${blog.title} | My Blog`,

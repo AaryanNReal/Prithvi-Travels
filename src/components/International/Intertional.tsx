@@ -113,7 +113,7 @@ export default function FeaturedDomesticTours() {
         <meta name="description" content="Explore our featured domestic tour packages" />
       </Head>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 border-b">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
             Featured International Tours

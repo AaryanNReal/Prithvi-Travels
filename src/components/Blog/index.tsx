@@ -171,7 +171,7 @@ export default function FeaturedPosts() {
   }
 
   return (
-    <section className="mb-12 mx-auto max-w-screen-xl mt-2 px-4 md:px-6 lg:px-8 border-b">
+    <section className="mb-12 mx-auto max-w-screen-xl mt-10 px-4 md:px-6 lg:px-8 border-b">
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Featured Posts</h2>
       
       <div className="relative">

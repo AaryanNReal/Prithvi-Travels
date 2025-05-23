@@ -153,7 +153,7 @@ const Hero = () => {
   return (
     <div 
       id="hero-carousel"
-      className="relative w-full mt-16 md:mt-22 h-[50vh] md:h-[calc(100vh-96px)] overflow-hidden group"
+      className="relative w-full mt-20 md:mt-22 h-[50vh] md:h-[calc(100vh-96px)] overflow-hidden group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

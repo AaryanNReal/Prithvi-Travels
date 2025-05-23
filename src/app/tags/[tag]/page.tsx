@@ -14,13 +14,18 @@ interface BlogPost {
   slug: string;
   description: string;
   createdAt: any;
-  image: {
+
     imageURL: string;
-    altText?: string;
-  };
-  category: {
+   
+  categoryDetails: {
+    categoryID: string;
     name: string;
     slug: string;
+    description?: string;
+    imageURL?: string;
+    isFeatured?: boolean;
+    createdAt?: any;
+    content?: string;
   };
   createdBy?: {
     name: string;
@@ -30,6 +35,9 @@ interface BlogPost {
   tags?: Record<string, {
     name: string;
     slug: string;
+    description?: string;
+    title?: string;
+    updatedAt?: any;
   }>;
   isFeatured?: boolean;
 }
@@ -66,23 +74,28 @@ export default function TagPage() {
           );
 
           if (tagMatchEntry) {
-            filteredPosts.push({
+            const post: BlogPost = {
               id: doc.id,
               title: data.title,
               slug: data.slug,
               description: data.description,
               createdAt: data.createdAt,
-              image: {
-                imageURL: data.image?.imageURL,
-                altText: data.image?.altText
+             
+              imageURL: data.imageURL || '/default-blog-image.jpg', // Add fallback image
+              categoryDetails: {
+                categoryID: data.categoryDetails?.categoryID || '',
+                name: data.categoryDetails?.name || '',
+                slug: data.categoryDetails?.slug || '',
+                
               },
-              category: data.category,
               createdBy: data.createdBy,
               tags: data.tags,
               isFeatured: data.isFeatured
-            });
+            };
 
-            
+            filteredPosts.push(post);
+
+           
           }
         });
 
@@ -111,51 +124,55 @@ export default function TagPage() {
   }
 
   return (
-    <div className="max-w-7xl mt-24 mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
+    <div className="max-w-6xl mx-auto px-4 mt-28 sm:px-6 lg:px-8 ">
+      <div className="mb-6">
         <Link 
           href="/blog" 
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          className="inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
         >
-          <ChevronLeftIcon className="h-5 w-5 mr-1" />
+          <ChevronLeftIcon className="h-4 w-4 mr-1" />
           Back to all posts
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-4">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
           Posts tagged with "{tagName || tagSlug}"
         </h1>
-        {error && <div className="mt-4 text-red-500">{error}</div>}
+        {error && <div className="mt-2 text-red-500 text-sm">{error}</div>}
       </div>
 
       {posts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {posts.map((post) => (
-            <BlogCard
-              key={post.id}
-              id={post.id}
-              slug={post.slug}
-              title={post.title}
-              description={post.description}
-              createdAt={post.createdAt?.toDate().toISOString() || new Date().toISOString()}
-              imageUrl={post.image.imageURL}
-              imageAlt={post.image.altText}
-              categoryDetails={post.category}
-              
-              author={post.createdBy ? {
-                name: post.createdBy.name,
-                image: post.createdBy.image,
-                role: post.createdBy.description
-              } : undefined}
-              tags={post.tags ? Object.values(post.tags).map(tag => ({
-                id: tag.slug,
-                name: tag.name,
-                slug: tag.slug
-              })) : []}
-            />
+            <div key={post.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
+              <BlogCard 
+                id={post.id}
+                slug={post.slug}
+                title={post.title}
+                description={post.description}
+                createdAt={post.createdAt?.toDate().toISOString() || new Date().toISOString()}
+                imageUrl={post.imageURL}
+                
+                categoryDetails={post.categoryDetails}
+                author={post.createdBy ? {
+                  name: post.createdBy.name,
+                  image: post.createdBy.image,
+                  role: post.createdBy.description
+                } : undefined}
+                tags={post.tags ? Object.values(post.tags).map(tag => ({
+                  id: tag.slug,
+                  name: tag.name,
+                  slug: tag.slug,
+                  description: tag.description,
+                  title: tag.title,
+                  updatedAt: tag.updatedAt?.toDate?.()?.toISOString()
+                })) : []}
+                
+              />
+            </div>
           ))}
         </div>
       ) : (
         !error && (
-          <div className="text-center py-12">
+          <div className="text-center py-8">
             <p className="text-gray-500 dark:text-gray-400">No posts found with this tag</p>
           </div>
         )

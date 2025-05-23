@@ -350,7 +350,7 @@ export default function BookingsPage() {
                 <th className="py-3 px-4 text-left">Title</th>
                 <th className="py-3 px-4 text-left">Location</th>
                 <th className="py-3 px-4 text-left">Price</th>
-               
+                <th className='py-3 px-4 text-left'>Status</th>
                 <th className="py-3 px-4 text-left">Actions</th>
               </tr>
             </thead>
@@ -377,6 +377,9 @@ export default function BookingsPage() {
                     {booking.tourDetails
                       ? `₹${booking.tourDetails.price.toLocaleString()}`
                       : `₹${Number(booking.cruiseDetails?.price).toLocaleString()}`}
+                  </td>
+                   <td className="py-3 px-4">
+                    {booking.status}
                   </td>
                 
                   <td className="py-3 px-4">

@@ -44,14 +44,7 @@ const menuData: Menu[] = [
     id: 4,
     title: "Cruises",
     newTab: false,
-    submenu: [
-      {
-        id: 41,
-        title: "Cruise List",
-        path: "/cruises",
-        newTab: false,
-      },
-    ],
+   path:'/cruises'
   },
   {
     id: 5,

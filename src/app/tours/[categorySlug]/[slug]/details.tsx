@@ -434,9 +434,7 @@ export default function TourDetailPage() {
                       <h3 className="text-xl font-semibold text-gray-800 mb-2">
                         Day {dayNumber}: {day.title}
                       </h3>
-                      <p className="text-gray-600 mb-4">
-                        {day.description}
-                      </p>
+                      <p className="text-gray-600 mb-4" dangerouslySetInnerHTML={{ __html: day.description }} />
                       
                       {day.imageURL && day.imageURL.length > 0 && (
                         <div className="mt-4 relative px-4">

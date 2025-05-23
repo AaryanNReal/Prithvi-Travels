@@ -14,11 +14,9 @@ interface BlogPost {
   slug: string;
   description: string;
   createdAt: any;
-  image: {
-    imageURL: string;
-    altText?: string;
-  };
-  category: {
+  imageURL: string;
+  categoryDetails: {
+    categoryID: string;
     name: string;
     slug: string;
   };
@@ -30,6 +28,7 @@ interface BlogPost {
   tags?: Record<string, {
     name: string;
     slug: string;
+    description?: string;
   }>;
   isFeatured?: boolean;
 }
@@ -50,7 +49,7 @@ export default function VisaExpertPage() {
         const blogsRef = collection(db, 'blogs');
         const q = query(
           blogsRef,
-          where('category.slug', '==', 'visa-expert'), // Hardcoded category slug
+          where('categoryDetails.slug', '==', 'visa-expert'), // Updated to categoryDetails.slug
           orderBy('createdAt', 'desc')
         );
 
@@ -68,13 +67,11 @@ export default function VisaExpertPage() {
               slug: data.slug,
               description: data.description,
               createdAt: data.createdAt,
-              image: {
-                imageURL: data.image?.imageURL,
-                altText: data.image?.altText
-              },
-              category: {
-                name: data.category.name,
-                slug: data.category.slug
+              imageURL: data.imageURL, // Updated to direct imageURL
+              categoryDetails: {
+                categoryID: data.categoryDetails.categoryID,
+                name: data.categoryDetails.name,
+                slug: data.categoryDetails.slug
               },
               createdBy: data.createdBy,
               tags: data.tags,
@@ -156,9 +153,9 @@ export default function VisaExpertPage() {
               title={post.title}
               description={post.description}
               createdAt={post.createdAt?.toDate().toISOString() || new Date().toISOString()}
-              imageUrl={post.image.imageURL}
-              imageAlt={post.image.altText}
-              categoryDetails={post.category}
+              imageUrl={post.imageURL}
+              imageAlt={post.title} // Using title as alt text since altText is not in schema
+              categoryDetails={post.categoryDetails}
               author={post.createdBy ? {
                 name: post.createdBy.name,
                 image: post.createdBy.image,
@@ -167,7 +164,8 @@ export default function VisaExpertPage() {
               tags={post.tags ? Object.values(post.tags).map(tag => ({
                 id: tag.slug,
                 name: tag.name,
-                slug: tag.slug
+                slug: tag.slug,
+                description: tag.description
               })) : []}
             />
           ))}

@@ -25,8 +25,8 @@ const AboutSectionOne = () => {
             {/* Left Section */}
             <div className="w-full px-4 lg:w-1/2">
               <SectionTitle
-                title="Welcome to Prithvi Travels"
-                paragraph="At Prithvi Travels, we are committed to providing unforgettable travel experiences. Whether you're exploring serene beaches, majestic mountains, or vibrant cities, we ensure your journey is seamless and memorable."
+                title="Welcome to Prathvi Travels"
+                paragraph="Established in 1989, Prathvi Travels specializes in reliable, efficient, and well-priced travel solutions. Whether you seek mountain escapes, beach holidays, or cultural adventures, we craft personalized journeys for unforgettable memories."
                 mb="44px"
               />
 
@@ -36,15 +36,15 @@ const AboutSectionOne = () => {
               >
                 <div className="mx-[-12px] flex flex-wrap">
                   <div className="w-full px-3 sm:w-1/2 lg:w-full xl:w-1/2">
-                    <List text="Expert Travel Guides" />
-                    <List text="Affordable Packages" />
-                    <List text="24/7 Customer Support" />
+                    <List text="Expert Travel Consultants" />
+                    <List text="Best-Priced Flight Bookings" />
+                    <List text="VISA Assistance" />
                   </div>
 
                   <div className="w-full px-3 sm:w-1/2 lg:w-full xl:w-1/2">
-                    <List text="Customized Itineraries" />
-                    <List text="Luxury Accommodations" />
-                    <List text="Eco-Friendly Travel" />
+                    <List text="Customized Holiday Packages" />
+                    <List text="Travel Insurance Coverage" />
+                    <List text="24/7 Customer Support" />
                   </div>
                 </div>
               </div>
@@ -52,21 +52,21 @@ const AboutSectionOne = () => {
 
             {/* Right Section */}
             <div className="w-full px-4 lg:w-1/2">
-              <div className="relative mx-auto aspect-25/24 max-w-[500px] lg:mr-0">
-              <Image
-                                src="/images/logo/logo.png"
-                                alt="logo"
-                                width={600}
-                                height={600}
-                                className="dark:hidden"
-                              />
-                              <Image
-                                src="/images/logo/logo.png"
-                                alt="logo"
-                                width={100}
-                                height={10}
-                                className="hidden  dark:block"
-                              />
+              <div className="relative mx-auto aspect-[25/24] max-w-[500px] lg:mr-0">
+                <Image
+                  src="/images/logo/logo.png"
+                  alt="Prathvi Travels Logo"
+                  width={600}
+                  height={600}
+                  className="dark:hidden"
+                />
+                <Image
+                  src="/images/logo/logo.png"
+                  alt="Prathvi Travels Logo"
+                  width={100}
+                  height={10}
+                  className="hidden dark:block"
+                />
               </div>
             </div>
           </div>

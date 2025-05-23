@@ -14,9 +14,7 @@ const Footer = () => {
                   Prithvi Travels
                 </h2>
                 <p className="text-1xl mb-4">
-                  Prithvi Travels is a travel agency that specializes in
-                  providing customized travel solutions for individuals and
-                  groups. 
+                  Established in 1989, Prathvi Travels specializes in reliable, efficient, and well-priced travel solutions. Whether you seek mountain escapes, beach holidays, or cultural adventures, we craft personalized journeys for unforgettable memories.
                 </p>
                 <div className="mb-2">
                   <div className="mb-4">
@@ -251,7 +249,7 @@ const Footer = () => {
                   </li>
                   <li>
                     <Link
-                      href="/"
+                      href="/visa-expert"
                       className="mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:text-body-color-dark dark:hover:text-primary"
                     >
                       Visa Expert

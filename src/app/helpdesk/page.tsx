@@ -609,7 +609,7 @@ const handleReopenTicket = useCallback(async () => {
                   Attachment (Optional)
                 </label>
                 <FirebaseFileUploader
-                  storagePath="helpdesk-attachments"
+                  storagePath="prathviTravelsMedia"
                   accept=".pdf,.doc,.docx,.jpg,.png"
                   maxSizeMB={15}
                   disabled={false}
@@ -681,7 +681,7 @@ const handleReopenTicket = useCallback(async () => {
                   Attachment (Optional)
                 </label>
                 <FirebaseFileUploader
-                  storagePath="helpdesk-attachments"
+                  storagePath="prathviTravelsMedia"
                   accept=".pdf,.doc,.docx,.jpg,.png"
                   maxSizeMB={15}
                   disabled={false}

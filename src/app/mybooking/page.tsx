@@ -9,6 +9,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 
 interface Booking {
   bookingId: string;
+  bookingType: 'Tour' | 'Cruise' | 'Custom Itinerary';
   createdAt: { toDate: () => Date };
   status: string;
   message?: string;
@@ -22,7 +23,7 @@ interface Booking {
   tourDetails?: {
     title: string;
     location: string;
-    startDate: { toDate: () => Date };
+    startDate: { toDate: () => Date } | null;
     price: number;
     description: string;
     flightIncluded: boolean;
@@ -35,7 +36,6 @@ interface Booking {
     status: string;
     tourType: string;
     updatedAt: { toDate: () => Date };
-    category?: string;
     categoryDetails?: {
       categoryID: string;
       description: string;
@@ -71,13 +71,32 @@ interface Booking {
     updatedAt: { toDate: () => Date };
     videoURL?: string;
     source?: string;
-    category?: string;
     categoryDetails?: {
       categoryID: string;
       description: string;
       name: string;
       slug: string;
     };
+  };
+  itineraryDetails?: {
+    id: string;
+    days: number;
+    nights: number;
+    location: string;
+    totalCost: number;
+    items: Array<{
+      componentID: string;
+      title: string;
+      description: string;
+      location: string;
+      locationType: string;
+      price: number;
+      images: string[];
+      createdAt: { toDate: () => Date };
+      updatedAt: { toDate: () => Date };
+    }>;
+    createdAt: { toDate: () => Date };
+    updatedAt: { toDate: () => Date };
   };
 }
 
@@ -86,7 +105,7 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'tours' | 'cruises'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'tours' | 'cruises' | 'custom'>('all');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
@@ -116,8 +135,9 @@ export default function BookingsPage() {
   }, [user?.uid]);
 
   const filteredBookings = bookings.filter((booking) => {
-    if (activeTab === 'tours') return booking.tourDetails;
-    if (activeTab === 'cruises') return booking.cruiseDetails;
+    if (activeTab === 'tours') return booking.bookingType === 'Tour';
+    if (activeTab === 'cruises') return booking.bookingType === 'Cruise';
+    if (activeTab === 'custom') return booking.bookingType === 'Custom Itinerary';
     return true;
   });
 
@@ -144,8 +164,9 @@ export default function BookingsPage() {
   const renderDetailModal = () => {
     if (!selectedBooking) return null;
 
-    const details = selectedBooking.tourDetails || selectedBooking.cruiseDetails;
-    const isTour = !!selectedBooking.tourDetails;
+    const isTour = selectedBooking.bookingType === 'Tour';
+    const isCruise = selectedBooking.bookingType === 'Cruise';
+    const isCustom = selectedBooking.bookingType === 'Custom Itinerary';
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -153,7 +174,11 @@ export default function BookingsPage() {
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-2xl font-bold">
-                {details?.title} - Booking Details
+                {isTour 
+                  ? selectedBooking.tourDetails?.title 
+                  : isCruise 
+                    ? selectedBooking.cruiseDetails?.title 
+                    : 'Custom Itinerary'} - Booking Details
               </h2>
               <button 
                 onClick={() => setSelectedBooking(null)}
@@ -172,6 +197,10 @@ export default function BookingsPage() {
                 <div>
                   <p className="text-sm text-gray-500">Booking ID</p>
                   <p>{selectedBooking.bookingId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Type</p>
+                  <p>{selectedBooking.bookingType}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Status</p>
@@ -212,68 +241,140 @@ export default function BookingsPage() {
                 )}
               </div>
 
-              {/* Tour/Cruise Details */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold border-b pb-2">{isTour ? 'Tour' : 'Cruise'} Details</h3>
-                <div>
-                  <p className="text-sm text-gray-500">Title</p>
-                  <p>{details?.title}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Location</p>
-                  <p>{details?.location}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Start Date</p>
-                  <p>{formatDate(details?.startDate?.toDate())}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Price</p>
-                  <p>{isTour ? `₹${details?.price?.toLocaleString()}` : `₹${Number(details?.price).toLocaleString()}`}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Duration</p>
-                  <p>{details?.numberofDays} days / {details?.numberofNights} nights</p>
-                </div>
-                {details?.description && (
+              {/* Tour/Cruise/Custom Details */}
+              {isTour && selectedBooking.tourDetails && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Tour Details</h3>
                   <div>
-                    <p className="text-sm text-gray-500">Description</p>
-                    <p>{details.description}</p>
+                    <p className="text-sm text-gray-500">Title</p>
+                    <p>{selectedBooking.tourDetails.title}</p>
                   </div>
-                )}
-                {isTour && selectedBooking.tourDetails?.flightIncluded !== undefined && (
+                  <div>
+                    <p className="text-sm text-gray-500">Location</p>
+                    <p>{selectedBooking.tourDetails.location}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Start Date</p>
+                    <p>{formatDate(selectedBooking.tourDetails.startDate?.toDate())}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Price</p>
+                    <p>₹{selectedBooking.tourDetails.price.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Duration</p>
+                    <p>{selectedBooking.tourDetails.numberofDays} days / {selectedBooking.tourDetails.numberofNights} nights</p>
+                  </div>
                   <div>
                     <p className="text-sm text-gray-500">Flight Included</p>
                     <p>{selectedBooking.tourDetails.flightIncluded ? 'Yes' : 'No'}</p>
                   </div>
-                )}
-              </div>
+                  {selectedBooking.tourDetails.description && (
+                    <div>
+                      <p className="text-sm text-gray-500">Description</p>
+                      <p>{selectedBooking.tourDetails.description}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {isCruise && selectedBooking.cruiseDetails && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Cruise Details</h3>
+                  <div>
+                    <p className="text-sm text-gray-500">Title</p>
+                    <p>{selectedBooking.cruiseDetails.title}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Location</p>
+                    <p>{selectedBooking.cruiseDetails.location}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Start Date</p>
+                    <p>{formatDate(selectedBooking.cruiseDetails.startDate?.toDate())}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Price</p>
+                    <p>₹{Number(selectedBooking.cruiseDetails.price).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Duration</p>
+                    <p>{selectedBooking.cruiseDetails.numberofDays} days / {selectedBooking.cruiseDetails.numberofNights} nights</p>
+                  </div>
+                  {selectedBooking.cruiseDetails.videoURL && (
+                    <div>
+                      <p className="text-sm text-gray-500">Video</p>
+                      <a href={selectedBooking.cruiseDetails.videoURL} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        Watch Video
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {isCustom && selectedBooking.itineraryDetails && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Custom Itinerary Details</h3>
+                  <div>
+                    <p className="text-sm text-gray-500">Location</p>
+                    <p>{selectedBooking.itineraryDetails.location}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Duration</p>
+                    <p>{selectedBooking.itineraryDetails.days} days / {selectedBooking.itineraryDetails.nights} nights</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Total Cost</p>
+                    <p>₹{selectedBooking.itineraryDetails.totalCost.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">Itinerary Items</p>
+                    <div className="space-y-4">
+                      {selectedBooking.itineraryDetails.items.map((item, index) => (
+                        <div key={index} className="border rounded-lg p-4">
+                          <h4 className="font-medium">{item.title}</h4>
+                          <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                          <div className="mt-2 flex justify-between">
+                            <span className="text-sm">Location: {item.location}</span>
+                            <span className="text-sm font-medium">₹{item.price.toLocaleString()}</span>
+                          </div>
+                          {item.images.length > 0 && (
+                            <div className="flex gap-2 mt-2 overflow-x-auto">
+                              {item.images.map((url, idx) => (
+                                <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
+                                  <img src={url} alt={`Item ${index + 1}`} className="h-16 w-auto rounded" />
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Additional Details */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2">Additional Details</h3>
-                {details?.imageURL && (
+                {isTour && selectedBooking.tourDetails?.imageURL && (
                   <div>
-                    <p className="text-sm text-gray-500 mb-2">Image</p>
+                    <p className="text-sm text-gray-500 mb-2">Tour Image</p>
                     <img 
-                      src={details.imageURL} 
-                      alt={details.title} 
+                      src={selectedBooking.tourDetails.imageURL} 
+                      alt={selectedBooking.tourDetails.title} 
                       className="w-full h-auto rounded-md max-h-40 object-cover"
                     />
                   </div>
                 )}
-                {!isTour && selectedBooking.cruiseDetails?.videoURL && (
+                {isCruise && selectedBooking.cruiseDetails?.imageURL && (
                   <div>
-                    <p className="text-sm text-gray-500">Video URL</p>
-                    <a href={selectedBooking.cruiseDetails.videoURL} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                      View Video
-                    </a>
-                  </div>
-                )}
-                {details?.category && (
-                  <div>
-                    <p className="text-sm text-gray-500">Category</p>
-                    <p>{details.category}</p>
+                    <p className="text-sm text-gray-500 mb-2">Cruise Image</p>
+                    <img 
+                      src={selectedBooking.cruiseDetails.imageURL} 
+                      alt={selectedBooking.cruiseDetails.title} 
+                      className="w-full h-auto rounded-md max-h-40 object-cover"
+                    />
                   </div>
                 )}
                 {isTour && selectedBooking.tourDetails?.itenaries && (
@@ -326,13 +427,19 @@ export default function BookingsPage() {
           className={`px-4 py-2 font-medium ${activeTab === 'tours' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
           onClick={() => setActiveTab('tours')}
         >
-          Tours ({bookings.filter(b => b.tourDetails).length})
+          Tours ({bookings.filter(b => b.bookingType === 'Tour').length})
         </button>
         <button
           className={`px-4 py-2 font-medium ${activeTab === 'cruises' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
           onClick={() => setActiveTab('cruises')}
         >
-          Cruises ({bookings.filter(b => b.cruiseDetails).length})
+          Cruises ({bookings.filter(b => b.bookingType === 'Cruise').length})
+        </button>
+        <button
+          className={`px-4 py-2 font-medium ${activeTab === 'custom' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('custom')}
+        >
+          Custom ({bookings.filter(b => b.bookingType === 'Custom Itinerary').length})
         </button>
       </div>
 
@@ -350,7 +457,7 @@ export default function BookingsPage() {
                 <th className="py-3 px-4 text-left">Title</th>
                 <th className="py-3 px-4 text-left">Location</th>
                 <th className="py-3 px-4 text-left">Price</th>
-                <th className='py-3 px-4 text-left'>Status</th>
+                <th className="py-3 px-4 text-left">Status</th>
                 <th className="py-3 px-4 text-left">Actions</th>
               </tr>
             </thead>
@@ -360,28 +467,39 @@ export default function BookingsPage() {
                   <td className="py-3 px-4 text-sm">{booking.bookingId}</td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-1 rounded-full text-xs ${
-                      booking.tourDetails 
+                      booking.bookingType === 'Tour' 
                         ? 'bg-green-100 text-green-800' 
-                        : 'bg-blue-100 text-blue-800'
+                        : booking.bookingType === 'Cruise'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-purple-100 text-purple-800'
                     }`}>
-                      {booking.tourDetails ? 'Tour' : 'Cruise'}
+                      {booking.bookingType}
                     </span>
                   </td>
                   <td className="py-3 px-4 font-medium">
-                    {booking.tourDetails?.title || booking.cruiseDetails?.title}
+                    {booking.bookingType === 'Tour' 
+                      ? booking.tourDetails?.title 
+                      : booking.bookingType === 'Cruise'
+                        ? booking.cruiseDetails?.title
+                        : 'Custom Itinerary'}
                   </td>
                   <td className="py-3 px-4">
-                    {booking.tourDetails?.location || booking.cruiseDetails?.location}
+                    {booking.bookingType === 'Tour' 
+                      ? booking.tourDetails?.location 
+                      : booking.bookingType === 'Cruise'
+                        ? booking.cruiseDetails?.location
+                        : booking.itineraryDetails?.location}
                   </td>
                   <td className="py-3 px-4">
-                    {booking.tourDetails
-                      ? `₹${booking.tourDetails.price.toLocaleString()}`
-                      : `₹${Number(booking.cruiseDetails?.price).toLocaleString()}`}
+                    {booking.bookingType === 'Tour'
+                      ? `₹${booking.tourDetails?.price.toLocaleString()}`
+                      : booking.bookingType === 'Cruise'
+                        ? `₹${Number(booking.cruiseDetails?.price).toLocaleString()}`
+                        : `₹${booking.itineraryDetails?.totalCost.toLocaleString()}`}
                   </td>
-                   <td className="py-3 px-4">
+                  <td className="py-3 px-4 capitalize">
                     {booking.status}
                   </td>
-                
                   <td className="py-3 px-4">
                     <button
                       onClick={() => setSelectedBooking(booking)}

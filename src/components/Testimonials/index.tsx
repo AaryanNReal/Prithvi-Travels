@@ -14,7 +14,7 @@ const testimonialData: Testimonial[] = [
   },
   {
     id: 2,
-    name: "Ananya Hakim",
+    name: "Sid",
     designation: "Family Traveler",
     content:
       "Traveling with kids can be stressful, but this agency made our European vacation seamless. They found kid-friendly activities and accommodations that kept everyone happy.",
@@ -23,7 +23,7 @@ const testimonialData: Testimonial[] = [
   },
   {
     id: 3,
-    name: "Priya Patel",
+    name: "Dinesh",
     designation: "Honeymooner",
     content:
       "Our Maldives honeymoon was absolutely magical thanks to this agency. They surprised us with a private sunset cruise and room upgrades. They are the best",

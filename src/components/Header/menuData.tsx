@@ -78,7 +78,7 @@ const menuData: Menu[] = [
 
   {
     id: 8,
-    title: "Custom Itenary + ",
+    title: "Custom Itinerary + ",
     path: "#",
     newTab: false,
     isbutton:true,

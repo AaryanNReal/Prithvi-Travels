@@ -40,6 +40,7 @@ interface ItineraryItem {
 
 interface UserData {
   uid?: string
+  name?:string
   email?: string | null
   displayName?: string | null
   phone?: string
@@ -68,6 +69,7 @@ export default function CreateCustomItineraryPage() {
     phone: ''
   })
   const [formSubmitted, setFormSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false) // New state for submission loading
 
   // Slider settings with custom arrows
   const sliderSettings = {
@@ -126,7 +128,7 @@ export default function CreateCustomItineraryPage() {
             setUserData(userData)
             
             setFormData({
-              name: userData.displayName || currentUser.displayName || '',
+              name: userData.name || currentUser.displayName || '',
               email: currentUser.email || '',
               phone: userData.phone || '',
               userID: userData.userID || "",
@@ -189,9 +191,15 @@ export default function CreateCustomItineraryPage() {
     setFormData(prev => ({ ...prev, phone: value }))
   }
 
-  // Identical booking submission to TourDetailPage
+  // Updated booking submission with loading state
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Prevent multiple submissions
+    if (isSubmitting) return
+    
+    setIsSubmitting(true)
+    
     try {
       const bookingId = `PTID${Date.now()}`
       
@@ -217,6 +225,7 @@ export default function CreateCustomItineraryPage() {
 
       await setDoc(doc(db, 'bookings', bookingId), {
         bookingId,
+        bookingType:"Custom Itinerary",
         status: 'captured',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -228,6 +237,8 @@ export default function CreateCustomItineraryPage() {
       setTimeout(() => setFormSubmitted(false), 3000)
     } catch (error) {
       console.error('Booking submission failed:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -398,7 +409,7 @@ export default function CreateCustomItineraryPage() {
               </div>
             </div>
 
-            {/* Booking Form (identical to TourDetailPage) */}
+            {/* Booking Form with disabled button functionality */}
             {selectedItems.length > 0 && (
               <div>
                 {formSubmitted ? (
@@ -433,6 +444,7 @@ export default function CreateCustomItineraryPage() {
                                 value={formData.phone}
                                 onChange={handlePhoneChange}
                                 required
+                                disabled={isSubmitting}
                               />
                             </div>
                           </div>
@@ -455,7 +467,8 @@ export default function CreateCustomItineraryPage() {
                               value={formData.name}
                               onChange={handleInputChange}
                               required
-                              className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                              disabled={isSubmitting}
+                              className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border disabled:bg-gray-100 disabled:cursor-not-allowed"
                               placeholder="Your name"
                             />
                           </div>
@@ -476,7 +489,8 @@ export default function CreateCustomItineraryPage() {
                               value={formData.email}
                               onChange={handleInputChange}
                               required
-                              className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                              disabled={isSubmitting}
+                              className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border disabled:bg-gray-100 disabled:cursor-not-allowed"
                               placeholder="Your email"
                             />
                           </div>
@@ -494,6 +508,7 @@ export default function CreateCustomItineraryPage() {
                               value={formData.phone}
                               onChange={handlePhoneChange}
                               required
+                              disabled={isSubmitting}
                             />
                           </div>
                         </div>
@@ -503,9 +518,19 @@ export default function CreateCustomItineraryPage() {
                     <div>
                       <button
                         type="submit"
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
+                        disabled={isSubmitting}
+                        className={`w-full font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out ${
+                          isSubmitting 
+                            ? 'bg-gray-400 cursor-not-allowed text-white' 
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
                       >
-                        {user ? 'Request a Call Back' : 'Submit Inquiry'}
+                        {isSubmitting 
+                          ? 'Submitting...' 
+                          : user 
+                            ? 'Request a Call Back' 
+                            : 'Submit Inquiry'
+                        }
                       </button>
                     </div>
                     

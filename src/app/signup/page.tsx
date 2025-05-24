@@ -25,17 +25,23 @@ const SignupPage = () => {
   };
 
   // Check if user with same UID already exists
-  const userExists = async (uid: string) => {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("uid", "==", uid));
-    const querySnapshot = await getDocs(q);
-    return !querySnapshot.empty;
+  const checkExistingUser = async (uid: string) => {
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("uid", "==", uid));
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error("Error checking existing user:", error);
+      return false;
+    }
   };
 
   const handleSignup = async () => {
     setError("");
     setSuccess("");
 
+    // Validation checks
     if (!fullName.trim()) {
       setError("Please enter your full name");
       return;
@@ -59,21 +65,26 @@ const SignupPage = () => {
 
     setLoading(true);
     try {
+      // Create user with email/password
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if user document with this UID already exists
-      if (await userExists(user.uid)) {
+      // Check if user already exists
+      const exists = await checkExistingUser(user.uid);
+      if (exists) {
         setError("An account with this email already exists");
         setLoading(false);
         return;
       }
 
-      // Create new user document with custom ID
-      const userDocRef = doc(collection(db, "users"));
+      // Create custom document ID
+      const customUserId = `UID${Date.now()}`;
+      const userDocRef = doc(db, "users", customUserId);
+
+      // Set user document with custom ID
       await setDoc(userDocRef, {
-        userID: userDocRef.id, // Use the auto-generated document ID
-        email,
+        userID: customUserId,
+        email: email,
         name: fullName,
         phone: phoneNumber,
         uid: user.uid,
@@ -102,12 +113,16 @@ const SignupPage = () => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Check if user document with this UID already exists
-      if (!(await userExists(user.uid))) {
-        // Create new user document only if doesn't exist
-        const userDocRef = doc(collection(db, "users"));
+      // Check if user already exists
+      const exists = await checkExistingUser(user.uid);
+      if (!exists) {
+        // Create custom document ID
+        const customUserId = `UID${Date.now()}`;
+        const userDocRef = doc(db, "users", customUserId);
+
+        // Set user document with custom ID
         await setDoc(userDocRef, {
-          userID: userDocRef.id,
+          userID: customUserId,
           email: user.email,
           name: user.displayName || "",
           photoURL: user.photoURL || "",

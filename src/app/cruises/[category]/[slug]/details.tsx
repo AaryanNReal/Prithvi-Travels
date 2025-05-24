@@ -52,10 +52,6 @@ interface FormData {
 }
 
 export default function CruiseDetailPage() {
-
-
- 
-
   const params = useParams();
   const router = useRouter();
   
@@ -69,6 +65,7 @@ export default function CruiseDetailPage() {
     message: ''
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // New state for button disable
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -199,6 +196,12 @@ export default function CruiseDetailPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true); // Disable button immediately
+    
     try {
       const bookingId = `PTID${Date.now()}`;
       
@@ -215,34 +218,34 @@ export default function CruiseDetailPage() {
       const cruiseDetails = {
         id: cruise?.id,
         title: cruise?.title,
-        category: cruise?.categoryDetails?.name,
         ...cruise
       };
 
       // Create the booking document
       await setDoc(doc(db, 'bookings', bookingId), {
         bookingId,
+        bookingType:"Cruise",
         status: 'captured',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         userDetails,
         cruiseDetails,
-        
         source: user ? (userData ? 'Details' : 'Details') : 'Details',
       });
 
       setFormSubmitted(true);
       setFormData(prev => ({ ...prev, message: '' }));
       
-      setTimeout(() => setFormSubmitted(false), 3000);
+      setTimeout(() => {
+        setFormSubmitted(false);
+        setIsSubmitting(false); // Re-enable button after success message disappears
+      }, 3000);
 
     } catch (error) {
       console.error('Booking submission failed:', error);
+      setIsSubmitting(false); // Re-enable button on error
     }
   };
-
-
-  
 
   if (loading) {
     return (
@@ -273,7 +276,6 @@ export default function CruiseDetailPage() {
 
   return (
     <>
-     
       <div className="flex flex-col md:flex-row mt-24 max-w-7xl mx-auto p-4 gap-8">
         {/* Main Cruise Details */}
         <div className="md:w-2/3">
@@ -295,10 +297,10 @@ export default function CruiseDetailPage() {
               </Link>
             )}
             <p className='text-gray-600 mt-2 max-w-3xl leading-relaxed'>
-  {cruise.description.length > 500 
-    ? `${cruise.description.substring(0, 500)}...` 
-    : cruise.description}
-</p>
+              {cruise.description.length > 500 
+                ? `${cruise.description.substring(0, 500)}...` 
+                : cruise.description}
+            </p>
             <div className="mt-6 relative h-96 w-full">
               <Image
                 src={cruise.imageURL}
@@ -455,14 +457,24 @@ export default function CruiseDetailPage() {
                   </>
                 )}
 
-                
-                
                 <div>
                   <button
                     type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
+                    disabled={isSubmitting}
+                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out ${
+                      isSubmitting 
+                        ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
                   >
-                    {user ? 'Request a Call Back' : 'Submit Inquiry'}
+                    {isSubmitting ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                        Processing...
+                      </div>
+                    ) : (
+                      user ? 'Request a Call Back' : 'Submit Inquiry'
+                    )}
                   </button>
                 </div>
 
@@ -481,4 +493,4 @@ export default function CruiseDetailPage() {
       </div>
     </>
   );
-} 
+}

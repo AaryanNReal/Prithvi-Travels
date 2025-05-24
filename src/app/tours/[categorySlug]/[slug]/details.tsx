@@ -73,6 +73,7 @@ interface FormData {
 }
 
 export default function TourDetailPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const params = useParams();
   const [tour, setTour] = useState<Tour | null>(null);
   const [loading, setLoading] = useState(true);
@@ -250,43 +251,52 @@ export default function TourDetailPage() {
     setFormData(prev => ({ ...prev, phone: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const bookingId = `PTID${Date.now()}`;
-      
-      const userId = user?.uid || `GUEST${Date.now()}`;
-      const userID = userData?.userID || userId;
-      const userDetails = {
-        name: userData?.name || formData.name,
-        email: userData?.email || formData.email,
-        phone: userData?.phone || formData.phone,
-        uid: user?.uid || null,
-        userID: userID
-      };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  // Prevent multiple submissions
+  if (isSubmitting) return;
+  
+  setIsSubmitting(true);
+  
+  try {
+    const bookingId = `PTID${Date.now()}`;
+    
+    const userId = user?.uid || `GUEST${Date.now()}`;
+    const userID = userData?.userID || userId;
+    const userDetails = {
+      name: userData?.name || formData.name,
+      email: userData?.email || formData.email,
+      phone: userData?.phone || formData.phone,
+      uid: user?.uid || null,
+      userID: userID
+    };
 
-      const tourDetails = {
-        id: tour?.id,
-        title: tour?.title,
-        category: tour?.categoryDetails?.name,
-        ...tour
-      };
+    const tourDetails = {
+      id: tour?.id,
+      title: tour?.title,
+      ...tour
+    };
 
-      await setDoc(doc(db, 'bookings', bookingId), {
-        bookingId,
-        status: 'captured',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        userDetails,
-        tourDetails
-      });
+    await setDoc(doc(db, 'bookings', bookingId), {
+      bookingId,
+      bookingType:"Tour",
+      status: 'captured',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      userDetails,
+      tourDetails
+    });
 
-      setFormSubmitted(true);
-      setTimeout(() => setFormSubmitted(false), 3000);
-    } catch (error) {
-      console.error('Booking submission failed:', error);
-    }
-  };
+    setFormSubmitted(true);
+    setTimeout(() => setFormSubmitted(false), 3000);
+  } catch (error) {
+    console.error('Booking submission failed:', error);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -621,11 +631,24 @@ export default function TourDetailPage() {
                 
                 <div>
                   <button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
-                  >
-                    {user ? 'Request a Call Back' : 'Submit Inquiry'}
-                  </button>
+  type="submit"
+  disabled={isSubmitting}
+  className={`w-full font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out ${
+    isSubmitting 
+      ? 'bg-gray-400 cursor-not-allowed text-gray-600' 
+      : 'bg-blue-600 hover:bg-blue-700 text-white'
+  }`}
+>
+  {isSubmitting 
+    ? (
+      <div className="flex items-center justify-center">
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+        Submitting...
+      </div>
+    )
+    : (user ? 'Request a Call Back' : 'Submit Inquiry')
+  }
+</button>
                 </div>
                 
                 {!user && (

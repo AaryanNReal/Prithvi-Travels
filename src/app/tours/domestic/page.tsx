@@ -1,12 +1,10 @@
 // app/tours/international/page.tsx
-'use client';
-
-import { useEffect, useState } from 'react';
 import { db } from '@/app/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import type { Metadata } from 'next';
 
 interface Tour {
   id: string;
@@ -24,76 +22,70 @@ interface Tour {
   location: string;
 }
 
-export default function InternationalToursPage() {
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Domestic Tours | Explore India with Our Travel Packages',
+    description: 'Discover amazing domestic tour packages across India. Book your perfect getaway with our curated collection of travel experiences.',
+    keywords: ['domestic tours', 'India travel', 'vacation packages', 'tour packages India'],
+    openGraph: {
+      title: 'Domestic Tours | Explore India',
+      description: 'Discover amazing domestic tour packages across India',
+      url: 'https://yourwebsite.com/tours/domestic',
+      images: [{
+        url: 'https://yourwebsite.com/images/domestic-tours-og.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Domestic Tours in India',
+      }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Domestic Tours | Explore India',
+      description: 'Discover amazing domestic tour packages across India',
+      images: ['https://yourwebsite.com/images/domestic-tours-twitter.jpg'],
+    },
+  };
+}
 
-  useEffect(() => {
-    const fetchTours = async () => {
-      try {
-        const q = query(
-          collection(db, 'tours'),
-          where('tourType', '==', 'domestic'),
-          where('status', '==', 'active')
-        );
-        const querySnapshot = await getDocs(q);
-        const toursData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Tour[];
-        setTours(toursData);
-      } catch (err) {
-        console.error('Error fetching tours:', err);
-        setError('Failed to load tours');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTours();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-12 px-4">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Domestic Tours</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Loading tours...
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden h-full animate-pulse">
-              <div className="bg-gray-200 h-64 w-full"></div>
-              <div className="p-5">
-                <div className="h-6 bg-gray-200 rounded mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                <div className="flex justify-between mt-4">
-                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+async function getDomesticTours() {
+  try {
+    const q = query(
+      collection(db, 'tours'),
+      where('tourType', '==', 'domestic'),
+      where('status', '==', 'active')
     );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Tour[];
+  } catch (err) {
+    console.error('Error fetching tours:', err);
+    throw new Error('Failed to load tours');
+  }
+}
+
+export default async function DomesticToursPage() {
+  let tours: Tour[] = [];
+  let error = '';
+
+  try {
+    tours = await getDomesticTours();
+  } catch (err) {
+    error = err instanceof Error ? err.message : 'Failed to load tours';
   }
 
   if (error) {
     return (
       <div className="container mx-auto py-12 px-4 text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">International Tours</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Domestic Tours</h1>
         <p className="text-xl text-red-500 mb-6">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
+        <Link 
+          href="/tours/domestic"
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           Try Again
-        </button>
+        </Link>
       </div>
     );
   }
@@ -115,11 +107,12 @@ export default function InternationalToursPage() {
                 <div className="rounded-xl overflow-hidden shadow-lg bg-white h-full flex flex-col hover:shadow-xl transition-shadow">
                   <div className="relative h-64 w-full">
                     <Image
-                      src={tour.imageURL}
+                      src={tour.imageURL || "/images/default-tour.jpg"}
                       alt={tour.title}
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      priority={false}
                     />
                     <span className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow">
                       {tour.categoryDetails.name}
@@ -154,7 +147,7 @@ export default function InternationalToursPage() {
       ) : (
         <div className="text-center py-12">
           <h2 className="text-2xl font-medium text-gray-700">
-            No international tours available at the moment
+            No domestic tours available at the moment
           </h2>
           <Link 
             href="/tours" 

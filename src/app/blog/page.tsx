@@ -1,8 +1,7 @@
-'use client';
-import { useEffect, useState } from "react";
 import BlogCard from "@/components/BlogCard";
 import { db } from "@/app/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
+import type { Metadata } from 'next';
 
 interface Blog {
   id: string;
@@ -41,61 +40,81 @@ interface Blog {
   }>;
 }
 
-export default function BlogList() {
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Blog Articles | Insights & Latest Updates',
+    description: 'Explore our collection of insightful blog articles covering various topics and industry trends.',
+    keywords: ['blog', 'articles', 'insights', 'updates', 'news'],
+    openGraph: {
+      title: 'Blog Articles | Insights & Latest Updates',
+      description: 'Explore our collection of insightful blog articles',
+      url: 'https://yourwebsite.com/blog',
+      images: [{
+        url: 'https://yourwebsite.com/images/blog-og.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Blog Articles',
+      }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Blog Articles',
+      description: 'Explore our collection of insightful blog articles',
+      images: ['https://yourwebsite.com/images/blog-twitter.jpg'],
+    },
+  };
+}
 
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const querySnapshot = await getDocs(collection(db, "blogs"));
-        const blogData = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          
-          return {
-            id: doc.id,
-            title: data.title || "Untitled Blog",
-            slug: data.slug,
-            description: data.description || "",
-            content: data.content || "",
-            createdAt: data.createdAt || { seconds: Date.now() / 1000 },
-            updatedAt: data.updatedAt,
-            imageURL: data.imageURL || "/default-blog-image.jpg",
-            isFeatured: data.isFeatured || false,
-            categoryDetails: {
-              categoryID: data.categoryDetails?.categoryID || "",
-              name: data.categoryDetails?.name || "Uncategorized",
-              slug: data.categoryDetails?.slug || "uncategorized",
-              description: data.categoryDetails?.description || "",
-              createdAt: data.categoryDetails?.createdAt || { seconds: Date.now() / 1000 }
-            },
-            createdBy: data.createdBy,
-            seoDetails: data.seoDetails ? {
-              description: data.seoDetails.description || "",
-              imageURL: data.seoDetails.imageURL || "",
-              keywords: data.seoDetails.keywords || [],
-              title: data.seoDetails.title || ""
-            } : undefined,
-            tags: data.tags
-          };
-        });
+async function getBlogs(): Promise<Blog[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, "blogs"));
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      
+      return {
+        id: doc.id,
+        title: data.title || "Untitled Blog",
+        slug: data.slug,
+        description: data.description || "",
+        content: data.content || "",
+        createdAt: data.createdAt || { seconds: Date.now() / 1000 },
+        updatedAt: data.updatedAt,
+        imageURL: data.imageURL || "/default-blog-image.jpg",
+        isFeatured: data.isFeatured || false,
+        categoryDetails: {
+          categoryID: data.categoryDetails?.categoryID || "",
+          name: data.categoryDetails?.name || "Uncategorized",
+          slug: data.categoryDetails?.slug || "uncategorized",
+          description: data.categoryDetails?.description || "",
+          createdAt: data.categoryDetails?.createdAt || { seconds: Date.now() / 1000 }
+        },
+        createdBy: data.createdBy,
+        seoDetails: data.seoDetails ? {
+          description: data.seoDetails.description || "",
+          imageURL: data.seoDetails.imageURL || "",
+          keywords: data.seoDetails.keywords || [],
+          title: data.seoDetails.title || ""
+        } : undefined,
+        tags: data.tags
+      };
+    });
+  } catch (err) {
+    console.error("Error fetching blogs:", err);
+    throw new Error("Failed to load blogs");
+  }
+}
 
-        await new Promise(resolve => setTimeout(resolve, 300));
-        setBlogs(blogData);
-      } catch (err) {
-        console.error("Error fetching blogs:", err);
-        setError("Failed to load blogs. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
+export default async function BlogList() {
+  let blogs: Blog[] = [];
+  let error = '';
 
-    fetchBlogs();
-  }, []);
+  try {
+    blogs = await getBlogs();
+    // Simulate loading delay (remove in production)
+    await new Promise(resolve => setTimeout(resolve, 300));
+  } catch (err) {
+    error = err instanceof Error ? err.message : "Failed to load blogs";
+  }
 
   if (error) {
     return (
@@ -116,27 +135,7 @@ export default function BlogList() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {loading ? (
-          Array.from({ length: 6 }).map((_, index) => (
-            <div 
-              key={index}
-              className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm transition-opacity duration-300 opacity-0 animate-fadeIn w-full max-w-[320px] mx-auto"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="bg-gray-200 dark:bg-gray-700 h-48 w-full animate-pulse"></div>
-              <div className="p-4">
-                <div className="bg-gray-200 dark:bg-gray-700 h-6 w-3/4 mb-3 rounded animate-pulse"></div>
-                <div className="bg-gray-200 dark:bg-gray-700 h-4 w-full mb-2 rounded animate-pulse"></div>
-                <div className="bg-gray-200 dark:bg-gray-700 h-4 w-5/6 mb-2 rounded animate-pulse"></div>
-                <div className="bg-gray-200 dark:bg-gray-700 h-4 w-2/3 mb-4 rounded animate-pulse"></div>
-                <div className="flex justify-between">
-                  <div className="bg-gray-200 dark:bg-gray-700 h-4 w-1/4 rounded animate-pulse"></div>
-                  <div className="bg-gray-200 dark:bg-gray-700 h-4 w-1/4 rounded animate-pulse"></div>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : blogs.length === 0 ? (
+        {blogs.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center mt-8">
             <p className="text-lg text-center text-gray-700 dark:text-gray-300">
               No blogs found. Check back later!
@@ -144,10 +143,7 @@ export default function BlogList() {
           </div>
         ) : ( 
           blogs.map((blog) => (
-            <div 
-              key={blog.id} 
-              className=""
-            >
+            <div key={blog.id} className="">
               <BlogCard
                 id={blog.id}
                 title={blog.title}
@@ -159,18 +155,14 @@ export default function BlogList() {
                 imageUrl={blog.imageURL}
                 isFeatured={blog.isFeatured}
                 categoryDetails={{
-                
                   name: blog.categoryDetails.name,
                   slug: blog.categoryDetails.slug,
-                
                 }}
                 author={blog.createdBy ? {
                   name: blog.createdBy.name,
                   image: blog.createdBy.image,
                   role: blog.createdBy.description
                 } : undefined}
-                
-                
               />
             </div>
           ))

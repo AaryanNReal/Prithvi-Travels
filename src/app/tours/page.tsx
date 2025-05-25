@@ -3,25 +3,6 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
 import TourCard from '@/components/Domestic/TourCard';
 
-interface Tour {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  imageURL: string;
-  categoryDetails: {
-    name: string;
-    slug: string;
-  };
-  isFeatured?: boolean;
-  numberofDays: number;
-  numberofNights: number;
-  price: number;
-  startDate: string;
-  status: string;
-  location: string;
-  tourType: string;
-}
 
 async function getTours() {
   try {

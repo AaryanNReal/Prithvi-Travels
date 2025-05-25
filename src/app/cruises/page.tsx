@@ -1,10 +1,9 @@
-'use client';
-import { useEffect, useState } from 'react';
+// app/cruises/page.tsx
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '@/app/lib/firebase'; // Adjust this import based on your Firebase setup
-import CruiseCard from '@/components/Cruises/cruise_card'; // Adjust the import path
-
-// Define the interface locally since we're not importing it
+import { db } from '@/app/lib/firebase';
+import CruiseCard from '@/components/Cruises/cruise_card';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 interface CruiseCardData {
   id: string;
   title: string;
@@ -25,64 +24,81 @@ interface CruiseCardData {
   cruiseType: string;
 }
 
-const CruisesPage = () => {
-  const [cruises, setCruises] = useState<CruiseCardData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Luxury Cruise Packages | Explore the World by Sea',
+    description: 'Discover our exclusive collection of cruise vacations to stunning destinations worldwide. Book your dream cruise today!',
+    keywords: ['cruise packages', 'luxury cruises', 'vacation at sea', 'cruise deals'],
+    openGraph: {
+      title: 'Luxury Cruise Packages | Explore the World by Sea',
+      description: 'Discover our exclusive collection of cruise vacations',
+      url: 'https://yourwebsite.com/cruises',
+      images: [{
+        url: 'https://yourwebsite.com/images/cruises-og.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Luxury Cruise Ship',
+      }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Luxury Cruise Packages',
+      description: 'Discover our exclusive collection of cruise vacations',
+      images: ['https://yourwebsite.com/images/cruises-twitter.jpg'],
+    },
+  };
+}
 
-  useEffect(() => {
-    const fetchCruises = async () => {
-      try {
-        const cruisesCollection = collection(db, 'cruises');
-        // You can add query constraints if needed, for example:
-        // const q = query(cruisesCollection, where('status', '==', 'active'));
-        const querySnapshot = await getDocs(cruisesCollection);
-        
-        const cruisesData: CruiseCardData[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          cruisesData.push({
-            id: doc.id,
-            title: data.title,
-            slug: data.slug,
-            description: data.description,
-            imageURL: data.imageURL,
-            categoryDetails: data.categoryDetails,
-            isFeatured: data.isFeatured || false,
-            numberofDays: data.numberofDays,
-            numberofNights: data.numberofNights,
-            price: data.price,
-            startDate: data.startDate,
-            status: data.status,
-            location: data.location,
-            cruiseType: data.cruiseType,
-          });
-        });
-        
-        setCruises(cruisesData);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching cruises:', err);
-        setError('Failed to load cruises. Please try again later.');
-        setLoading(false);
-      }
-    };
+async function getCruisesData(): Promise<CruiseCardData[]> {
+  try {
+    const cruisesCollection = collection(db, 'cruises');
+    const querySnapshot = await getDocs(cruisesCollection);
+    
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        title: data.title,
+        slug: data.slug,
+        description: data.description,
+        imageURL: data.imageURL,
+        categoryDetails: data.categoryDetails,
+        isFeatured: data.isFeatured || false,
+        numberofDays: data.numberofDays,
+        numberofNights: data.numberofNights,
+        price: data.price,
+        startDate: data.startDate,
+        status: data.status,
+        location: data.location,
+        cruiseType: data.cruiseType,
+      };
+    });
+  } catch (err) {
+    console.error('Error fetching cruises:', err);
+    throw new Error('Failed to load cruises');
+  }
+}
 
-    fetchCruises();
-  }, []);
+export default async function CruisesPage() {
+  let cruises: CruiseCardData[] = [];
+  let error = '';
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+  try {
+    cruises = await getCruisesData();
+  } catch (err) {
+    error = err instanceof Error ? err.message : 'Failed to load cruises';
   }
 
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-red-500 text-lg">{error}</div>
+        <Link 
+          href="/cruises"
+          className="ml-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Try Again
+        </Link>
       </div>
     );
   }
@@ -131,6 +147,4 @@ const CruisesPage = () => {
       </div>
     </div>
   );
-};
-
-export default CruisesPage;
+}

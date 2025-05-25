@@ -406,7 +406,10 @@ export default function CreateCustomItineraryPage() {
               <div className="bg-green-50 p-3 rounded-lg col-span-2">
                 <p className="text-xs text-gray-500">Total Cost</p>
                 <p className="text-2xl font-bold">₹{totalCost.toLocaleString()}</p>
+                
               </div>
+              <p className='text-red-400 '> * This Price is just an estimate </p>
+
             </div>
 
             {/* Booking Form with disabled button functionality */}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 const countries = [
   { name: "India", image: "/images/flags/india.png" },
@@ -18,30 +18,37 @@ const Brands = () => {
   const [itemsPerPage, setItemsPerPage] = useState(4);
   const autoPlayInterval = 2000;
 
-  // Responsive items per page
-  useEffect(() => {
-    const updateItemsPerPage = () => {
-      if (window.innerWidth < 640) setItemsPerPage(1);
-      else if (window.innerWidth < 1024) setItemsPerPage(2);
-      else setItemsPerPage(4);
-    };
-
-    updateItemsPerPage();
-    window.addEventListener("resize", updateItemsPerPage);
-    return () => window.removeEventListener("resize", updateItemsPerPage);
+  // Memoized responsive items per page calculation
+  const updateItemsPerPage = useCallback(() => {
+    const width = window.innerWidth;
+    if (width < 640) return setItemsPerPage(1);
+    if (width < 1024) return setItemsPerPage(2);
+    setItemsPerPage(4);
   }, []);
 
-  const nextSlide = () => {
+  useEffect(() => {
+    updateItemsPerPage();
+    const resizeHandler = () => requestAnimationFrame(updateItemsPerPage);
+    window.addEventListener("resize", resizeHandler);
+    return () => window.removeEventListener("resize", resizeHandler);
+  }, [updateItemsPerPage]);
+
+  // Memoized next slide function
+  const nextSlide = useCallback(() => {
     setCurrentIndex(prev => 
       prev + itemsPerPage >= countries.length ? 0 : prev + itemsPerPage
     );
-  };
+  }, [itemsPerPage]);
 
-  // Auto play
+  // Auto play with cleanup
   useEffect(() => {
     const interval = setInterval(nextSlide, autoPlayInterval);
     return () => clearInterval(interval);
-  }, [currentIndex, itemsPerPage]);
+  }, [nextSlide]);
+
+  // Calculate transform percentage
+  const transformPercentage = (currentIndex / itemsPerPage) * 100;
+  const itemWidth = `${100 / itemsPerPage}%`;
 
   return (
     <section className="py-20 border-b border-t">
@@ -60,28 +67,24 @@ const Brands = () => {
           <div className="overflow-hidden">
             <div
               className="flex transition-all duration-500 ease-in-out"
-              style={{
-                transform: `translateX(-${(currentIndex / itemsPerPage) * 100}%)`,
-              }}
+              style={{ transform: `translateX(-${transformPercentage}%)` }}
             >
               {countries.map((country, index) => (
                 <div
-                  key={index}
+                  key={`${country.name}-${index}`}
                   className="flex-shrink-0 px-4"
-                  style={{ flexBasis: `${100 / itemsPerPage}%` }}
+                  style={{ flexBasis: itemWidth }}
                 >
                   <div className="group relative h-64 flex flex-col items-center justify-center">
-                    {/* Flag container with fixed size */}
                     <div className="relative w-full h-40 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
                       <img
                         src={country.image}
                         alt={`${country.name} flag`}
                         className="w-auto h-full object-contain drop-shadow-lg"
                         style={{ maxWidth: "160px", maxHeight: "120px" }}
+                        loading="lazy"
                       />
                     </div>
-                    
-                    {/* Country name that appears only on hover */}
                     <div className="absolute bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
                       <h3 className="text-xl font-bold text-gray-800 dark:text-white mt-2">
                         {country.name}
@@ -98,4 +101,4 @@ const Brands = () => {
   );
 };
 
-export default Brands;
+export default React.memo(Brands);

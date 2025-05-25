@@ -5,8 +5,7 @@ import { db } from '@/app/lib/firebase';
 import CruiseCard from '@/components/Cruises/cruise_card';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
-
-// Import Swiper styles
+import Link from 'next/link';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -37,6 +36,8 @@ const FeaturedCruisesPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchFeaturedCruises = async () => {
       try {
         const cruisesCollection = collection(db, 'cruises');
@@ -47,43 +48,33 @@ const FeaturedCruisesPage = () => {
         );
 
         const querySnapshot = await getDocs(q);
-        const cruises: Cruise[] = [];
+        
+        if (!isMounted) return;
 
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          cruises.push({
-            id: doc.id,
-            title: data.title,
-            slug: data.slug,
-            description: data.description,
-            imageURL: data.imageURL,
-            categoryDetails: data.categoryDetails,
-            isFeatured: data.isFeatured,
-            numberofDays: data.numberofDays,
-            numberofNights: data.numberofNights,
-            price: data.price,
-            startDate: data.startDate,
-            status: data.status,
-            location: data.location,
-            cruiseType: data.cruiseType,
-          });
-        });
+        const cruises = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Cruise[];
 
         setFeaturedCruises(cruises);
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching featured cruises:', err);
-        setError('Failed to load featured cruises');
-        setLoading(false);
+        if (isMounted) setError('Failed to load featured cruises');
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchFeaturedCruises();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[300px] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-lg">Loading featured cruises...</p>
@@ -94,7 +85,7 @@ const FeaturedCruisesPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[300px] flex items-center justify-center">
         <div className="text-center text-red-500">
           <p className="text-xl">{error}</p>
         </div>
@@ -103,16 +94,18 @@ const FeaturedCruisesPage = () => {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 ">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
-            Featured Cruise Packages
-          </h1>
-          <p className="mt-4 text-xl text-gray-600 dark:text-gray-300">
-            Discover our specially selected cruise experiences
-          </p>
-        </div>
+        <Link href="/cruises">
+          <div className="text-center mb-12 cursor-pointer">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
+              Featured Cruise Packages
+            </h1>
+            <p className="mt-4 text-xl text-gray-600 dark:text-gray-300">
+              Discover our specially selected cruise experiences
+            </p>
+          </div>
+        </Link>
 
         {featuredCruises.length === 0 ? (
           <div className="text-center py-12">
@@ -129,39 +122,15 @@ const FeaturedCruisesPage = () => {
               navigation
               pagination={{ clickable: true }}
               breakpoints={{
-                640: {
-                  slidesPerView: 1,
-                  spaceBetween: 20,
-                },
-                768: {
-                  slidesPerView: 2,
-                  spaceBetween: 30,
-                },
-                1024: {
-                  slidesPerView: 3,
-                  spaceBetween: 30,
-                },
+                640: { slidesPerView: 1, spaceBetween: 20 },
+                768: { slidesPerView: 2, spaceBetween: 30 },
+                1024: { slidesPerView: 3, spaceBetween: 30 },
               }}
               className="py-8"
             >
               {featuredCruises.map((cruise) => (
                 <SwiperSlide key={cruise.id} className="pb-12">
-                  <CruiseCard
-                    id={cruise.id}
-                    title={cruise.title}
-                    slug={cruise.slug}
-                    description={cruise.description}
-                    imageURL={cruise.imageURL}
-                    categoryDetails={cruise.categoryDetails}
-                    isFeatured={cruise.isFeatured}
-                    numberofDays={cruise.numberofDays}
-                    numberofNights={cruise.numberofNights}
-                    price={cruise.price}
-                    startDate={cruise.startDate}
-                    status={cruise.status}
-                    location={cruise.location}
-                    cruiseType={cruise.cruiseType}
-                  />
+                  <CruiseCard {...cruise} />
                 </SwiperSlide>
               ))}
             </Swiper>

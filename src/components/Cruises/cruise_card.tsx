@@ -102,7 +102,7 @@ const CruiseCard: React.FC<CruiseCardProps> = ({
           </h2>
           
           {/* Description */}
-          <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-2 mb-4 flex-1">
+          <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-1 mb-4 flex-1">
             {description}
           </p>
           

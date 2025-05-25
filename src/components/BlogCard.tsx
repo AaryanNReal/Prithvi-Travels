@@ -106,7 +106,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
             </h2>
             
             {/* Description */}
-            <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-4">
+            <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-1 mb-4">
               {description}
             </p>
             

@@ -4,12 +4,9 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
 import TourCard from '@/components/Domestic/TourCard';
 import Head from 'next/head';
-
-// Import Swiper React components and styles
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
-
-// Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -40,6 +37,8 @@ export default function FeaturedDomesticTours() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true; // Flag to track component mount status
+
     const fetchFeaturedDomesticTours = async () => {
       try {
         const toursRef = collection(db, 'tours');
@@ -51,43 +50,39 @@ export default function FeaturedDomesticTours() {
         );
 
         const querySnapshot = await getDocs(q);
-        const toursData: Tour[] = [];
+        
+        if (!isMounted) return; // Don't update state if component unmounted
 
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          toursData.push({
-            id: doc.id,
-            title: data.title,
-            slug: data.slug,
-            description: data.description,
-            imageURL: data.imageURL,
-            location: data.location,
-            categoryDetails: data.categoryDetails,
-            isFeatured: data.isFeatured,
-            numberofDays: data.numberofDays,
-            numberofNights: data.numberofNights,
-            price: data.price,
-            startDate: data.startDate,
-            status: data.status,
-            tourType: data.tourType
-          });
-        });
+        const toursData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Tour[];
 
         setTours(toursData);
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching tours:', err);
-        setError('Failed to load tours. Please try again later.');
-        setLoading(false);
+        if (isMounted) {
+          setError('Failed to load tours. Please try again later.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
+    // Start loading data immediately
     fetchFeaturedDomesticTours();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[300px] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-lg">Loading featured tours...</p>
@@ -98,7 +93,7 @@ export default function FeaturedDomesticTours() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[300px] flex items-center justify-center">
         <div className="text-center text-red-500">
           <p className="text-xl">{error}</p>
         </div>
@@ -114,14 +109,16 @@ export default function FeaturedDomesticTours() {
       </Head>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-            Featured Domestic Tours
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Explore our specially curated selection of domestic tour packages
-          </p>
-        </div>
+        <Link href="/tours/domestic">
+          <div className="text-center mb-12">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
+              Featured Domestic Tours
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Explore our specially curated selection of domestic tour packages
+            </p>
+          </div>
+        </Link>
 
         {tours.length === 0 ? (
           <div className="text-center py-12">
@@ -138,40 +135,16 @@ export default function FeaturedDomesticTours() {
               navigation
               pagination={{ clickable: true }}
               breakpoints={{
-                640: {
-                  slidesPerView: 1,
-                  spaceBetween: 20,
-                },
-                768: {
-                  slidesPerView: 2,
-                  spaceBetween: 30,
-                },
-                1024: {
-                  slidesPerView: 3,
-                  spaceBetween: 30,
-                },
+                640: { slidesPerView: 1, spaceBetween: 20 },
+                768: { slidesPerView: 2, spaceBetween: 30 },
+                1024: { slidesPerView: 3, spaceBetween: 30 },
               }}
               className="py-4 px-2"
             >
               {tours.map((tour) => (
                 <SwiperSlide key={tour.id} className="pb-10">
                   <div className="h-full flex justify-center">
-                    <TourCard
-                      id={tour.id}
-                      title={tour.title}
-                      slug={tour.slug}
-                      description={tour.description}
-                      imageURL={tour.imageURL}
-                      categoryDetails={tour.categoryDetails}
-                      isFeatured={tour.isFeatured}
-                      numberofDays={tour.numberofDays}
-                      numberofNights={tour.numberofNights}
-                      price={tour.price}
-                      startDate={tour.startDate}
-                      status={tour.status}
-                      location={tour.location}
-                      tourType={tour.tourType}
-                    />
+                    <TourCard {...tour} />
                   </div>
                 </SwiperSlide>
               ))}

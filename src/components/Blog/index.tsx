@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { db } from '@/app/lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import BlogCard from '../BlogCard';
@@ -40,27 +40,25 @@ export default function FeaturedPosts() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(1);
 
-  // Set slides per view based on screen size
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setSlidesPerView(1); // Mobile: 1 card per slide
-      } else if (window.innerWidth < 1024) {
-        setSlidesPerView(2); // Tablet: 2 cards per slide
-      } else {
-        setSlidesPerView(3); // Desktop: 3 cards per slide
-      }
-    };
-
-    // Initial call
-    handleResize();
-    
-    // Listen for window resize
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+  // Memoized responsive slides per view calculation
+  const updateSlidesPerView = useCallback(() => {
+    const width = window.innerWidth;
+    if (width < 768) setSlidesPerView(1);
+    else if (width < 1024) setSlidesPerView(2);
+    else setSlidesPerView(3);
   }, []);
 
   useEffect(() => {
+    updateSlidesPerView();
+    const resizeHandler = () => requestAnimationFrame(updateSlidesPerView);
+    window.addEventListener('resize', resizeHandler);
+    return () => window.removeEventListener('resize', resizeHandler);
+  }, [updateSlidesPerView]);
+
+  // Fetch posts with cleanup
+  useEffect(() => {
+    let isMounted = true;
+
     const fetchFeaturedPosts = async () => {
       try {
         setLoading(true);
@@ -75,47 +73,27 @@ export default function FeaturedPosts() {
 
         const querySnapshot = await getDocs(q);
         
+        if (!isMounted) return;
+        
         if (querySnapshot.empty) {
           setError('No featured posts found');
         } else {
-          const postsData: BlogPost[] = [];
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            postsData.push({
-              id: doc.id,
-              title: data.title,
-              slug: data.slug,
-              description: data.description,
-              content: data.content,
-              createdAt: data.createdAt,
-              imageURL: data.imageURL,
-              isFeatured: data.isFeatured,
-              categoryDetails: {
-                categoryID: data.categoryDetails?.categoryID,
-                name: data.categoryDetails?.name,
-                slug: data.categoryDetails?.slug
-              },
-              seoDetails: data.seoDetails ? {
-                description: data.seoDetails.description,
-                imageURL: data.seoDetails.imageURL,
-                keywords: data.seoDetails.keywords,
-                title: data.seoDetails.title
-              } : undefined,
-              tags: data.tags,
-              updatedAt: data.updatedAt
-            });
-          });
+          const postsData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as BlogPost[];
           setFeaturedPosts(postsData);
         }
       } catch (err) {
         console.error('Error fetching featured posts:', err);
-        setError('Failed to load featured posts');
+        if (isMounted) setError('Failed to load featured posts');
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchFeaturedPosts();
+    return () => { isMounted = false; };
   }, []);
 
   // Reset current slide when slides per view changes
@@ -123,30 +101,37 @@ export default function FeaturedPosts() {
     setCurrentSlide(0);
   }, [slidesPerView]);
 
-  // Function to move to next slide
+  // Memoized navigation functions
   const nextSlide = useCallback(() => {
     if (featuredPosts.length <= slidesPerView) return;
-    
     const totalSlides = Math.ceil(featuredPosts.length / slidesPerView);
-    setCurrentSlide((prevSlide) => (prevSlide + 1) % totalSlides);
+    setCurrentSlide(prev => (prev + 1) % totalSlides);
   }, [featuredPosts.length, slidesPerView]);
 
-  // Function to move to previous slide
   const prevSlide = useCallback(() => {
     if (featuredPosts.length <= slidesPerView) return;
-    
     const totalSlides = Math.ceil(featuredPosts.length / slidesPerView);
-    setCurrentSlide((prevSlide) => (prevSlide - 1 + totalSlides) % totalSlides);
+    setCurrentSlide(prev => (prev - 1 + totalSlides) % totalSlides);
   }, [featuredPosts.length, slidesPerView]);
 
-  // Auto slide every 5 seconds
+  // Auto slide with cleanup
   useEffect(() => {
-    const autoSlideTimer = setInterval(() => {
-      nextSlide();
-    }, 5000);
+    if (featuredPosts.length <= slidesPerView) return;
+    const timer = setInterval(nextSlide, 5000);
+    return () => clearInterval(timer);
+  }, [nextSlide, featuredPosts.length, slidesPerView]);
 
-    return () => clearInterval(autoSlideTimer);
-  }, [nextSlide]);
+  // Memoized slides calculation
+  const { slides, totalSlides } = useMemo(() => {
+    const total = Math.ceil(featuredPosts.length / slidesPerView);
+    const slidesArray = [];
+    
+    for (let i = 0; i < total; i++) {
+      slidesArray.push(featuredPosts.slice(i * slidesPerView, (i + 1) * slidesPerView));
+    }
+    
+    return { slides: slidesArray, totalSlides: total };
+  }, [featuredPosts, slidesPerView]);
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
@@ -160,42 +145,26 @@ export default function FeaturedPosts() {
     </div>
   );
 
-  // Prepare slides based on slidesPerView
-  const slides = [];
-  const totalSlides = Math.ceil(featuredPosts.length / slidesPerView);
-
-  for (let i = 0; i < totalSlides; i++) {
-    const startIndex = i * slidesPerView;
-    const slidePosts = featuredPosts.slice(startIndex, startIndex + slidesPerView);
-    slides.push(slidePosts);
-  }
-
   return (
     <section className="mb-12 mx-auto max-w-screen-xl mt-10 px-4 md:px-6 lg:px-8 border-b">
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Featured Posts</h2>
       
       <div className="relative">
-        {/* Slider Container */}
         <div className="overflow-hidden relative max-w-5xl mx-auto">
-          {/* Slider container with smooth transition */}
           <div 
             className="flex transition-transform duration-500 ease-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
             {slides.map((slideContent, slideIndex) => (
               <div 
-                key={slideIndex} 
+                key={`slide-${slideIndex}`} 
                 className="min-w-full flex-shrink-0 px-1 md:px-2"
               >
-                {/* Responsive grid - always one column on mobile, variable on larger screens */}
                 <div className={`grid grid-cols-1 ${
                   slidesPerView === 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3'
                 } gap-4 md:gap-5 lg:gap-6`}>
                   {slideContent.map((post) => (
-                    <div 
-                      key={post.id}
-                      className="w-full max-w-xs mx-auto md:max-w-sm lg:max-w-sm overflow-hidden rounded-lg shadow-sm"
-                    >
+                    <div key={post.id} className="w-full max-w-xs mx-auto md:max-w-sm lg:max-w-sm overflow-hidden rounded-lg shadow-sm">
                       <BlogCard
                         id={post.id}
                         slug={post.slug}
@@ -216,42 +185,34 @@ export default function FeaturedPosts() {
             ))}
           </div>
 
-          {/* Navigation dots */}
-          {totalSlides > 1 && (
-            <div className="flex justify-center mt-6 space-x-2">
-              {Array.from({ length: totalSlides }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`h-2 w-2 rounded-full ${
-                    currentSlide === index ? 'bg-blue-500' : 'bg-gray-300'
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Navigation arrows - only show if there are multiple slides */}
           {totalSlides > 1 && (
             <>
+              <div className="flex justify-center mt-6 space-x-2">
+                {Array.from({ length: totalSlides }).map((_, index) => (
+                  <button
+                    key={`dot-${index}`}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`h-2 w-2 rounded-full transition-colors ${
+                      currentSlide === index ? 'bg-blue-500' : 'bg-gray-300'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+
               <button
                 onClick={prevSlide}
-                className="absolute top-1/2 left-0 -translate-y-1/2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 z-10 md:-translate-x-3"
+                className="absolute top-1/2 left-0 -translate-y-1/2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 z-10 md:-translate-x-3 transition-colors"
                 aria-label="Previous slide"
               >
-                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
+                <ChevronLeftIcon />
               </button>
               <button
                 onClick={nextSlide}
-                className="absolute top-1/2 right-0 -translate-y-1/2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 z-10 md:translate-x-3"
+                className="absolute top-1/2 right-0 -translate-y-1/2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-gray-700 z-10 md:translate-x-3 transition-colors"
                 aria-label="Next slide"
               >
-                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <ChevronRightIcon />
               </button>
             </>
           )}
@@ -260,3 +221,16 @@ export default function FeaturedPosts() {
     </section>
   );
 }
+
+// Extracted SVG icons for better readability
+const ChevronLeftIcon = () => (
+  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+  </svg>
+);
+
+const ChevronRightIcon = () => (
+  <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+  </svg>
+);

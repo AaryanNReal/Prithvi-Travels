@@ -99,9 +99,9 @@ const TourCard: React.FC<TourCardProps> = ({
           </h2>
           
           {/* Description */}
-          <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-2 mb-4 flex-1"> {/* Increased text size */}
-            {description}
-          </p>
+          <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-1 mb-4 flex-1">
+  {description}
+</p>
           
           {/* Metadata */}
           <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 border-t border-black/10 pt-3">

@@ -2,13 +2,8 @@
 import type { Metadata } from 'next';
 import CreateCustomItineraryPage from './CreateCustomItineraryPage';
 
-export async function generateMetadata(
-  props: {
-    params: Promise<{ location: string }>;
-  }
-): Promise<Metadata> {
-  const params = await props.params;
-  const location = decodeURIComponent(params.location);
+export async function generateMetadata(): Promise<Metadata> {
+  const location = "Your Destination"; // Static location name
 
   return {
     title: `Custom ${location} Itinerary Builder | Plan Your Perfect Trip`,
@@ -23,9 +18,9 @@ export async function generateMetadata(
     openGraph: {
       title: `Plan Your ${location} Trip | Custom Itinerary Builder`,
       description: `Build your perfect ${location} vacation with our custom itinerary planner`,
-      url: `https://yourwebsite.com/custom-itinerary/${params.location}`,
+      url: `https://yourwebsite.com/custom-itinerary`,
       images: [{
-        url: `https://yourwebsite.com/images/${params.location}-itinerary-og.jpg`,
+        url: `https://yourwebsite.com/images/itinerary-og.jpg`,
         width: 1200,
         height: 630,
         alt: `${location} Travel Itinerary`,
@@ -35,15 +30,15 @@ export async function generateMetadata(
       card: 'summary_large_image',
       title: `Custom ${location} Itinerary Builder`,
       description: `Create your perfect trip to ${location}`,
-      images: [`https://yourwebsite.com/images/${params.location}-itinerary-twitter.jpg`],
+      images: [`https://yourwebsite.com/images/itinerary-twitter.jpg`],
     },
     alternates: {
-      canonical: `https://yourwebsite.com/custom-itinerary/${params.location}`,
+      canonical: `https://yourwebsite.com/custom-itinerary`,
     },
   };
 }
 
-export default async function Page({ params }: { params: { location: string } }) {
+export default async function Page() {
   return (
     <>
       {/* Server component wrapper */}

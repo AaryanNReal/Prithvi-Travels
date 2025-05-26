@@ -1,7 +1,6 @@
-// app/blog/[category]/[title]/page.tsx
 import { Metadata } from 'next';
 import { db } from '@/app/lib/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import BlogPostPage from './details';
 
 export async function generateMetadata(
@@ -18,49 +17,41 @@ export async function generateMetadata(
     const q = query(
       blogsRef,
       where('categoryDetails.slug', '==', category),
-      where('slug','==',slug),
-    
+      where('slug', '==', slug),
     );
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
       const blog = querySnapshot.docs[0].data();
-      const tags = blog.tags ? Object.values(blog.tags as Record<string, { name: string }>).map(tag => tag.name) : [];
+      const seo = blog.seoDetails || {};
       
-      const defaultKeywords = [
-        'blog',
-        'article',
-        blog.category?.name || '',
-        blog.createdBy?.name || '',
-      ];
+      if (!seo.title || !seo.description) {
+        throw new Error('Required SEO fields are missing');
+      }
 
-      const allKeywords = [...tags, ...defaultKeywords].filter(Boolean);
-      const description = blog.summary || blog.description?.substring(0, 160) || 'Read this blog post';
       const url = `${baseUrl}/blog/${category}/${slug}`;
-      const imageUrl = blog.imageURL || `${baseUrl}/default-image.jpg`;
+      const imageUrl = seo.imageURL || `${baseUrl}/default-image.jpg`;
 
       return {
-        title: `${blog.title} | My Blog`,
-        description,
-        keywords: allKeywords.join(', '),
+        title: seo.title,
+        description: seo.description,
+        keywords: seo.keywords?.join(', ') || '',
         openGraph: {
-          title: blog.title,
-          description,
-          url,
+          title: seo.title,
+          description: seo.description,
+          url: url,
           type: 'article',
-          publishedTime: blog.createdAt?.toDate?.()?.toISOString(),
-          authors: [blog.createdBy?.name || ''],
           images: [{
             url: imageUrl,
             width: 1200,
             height: 630,
-            alt: blog.image?.altText || blog.title,
+            alt: seo.title,
           }],
         },
         twitter: {
           card: 'summary_large_image',
-          title: blog.title,
-          description,
+          title: seo.title,
+          description: seo.description,
           images: [imageUrl],
         },
         alternates: {
@@ -70,12 +61,15 @@ export async function generateMetadata(
     }
   } catch (error) {
     console.error('Error generating metadata:', error);
+    return {
+      title: 'Page Not Found | Prithvi Travels',
+      description: 'The requested blog post could not be found',
+    };
   }
 
   return {
-    title: 'Blog Post | My Blog',
-    description: 'Read this interesting blog post',
-    keywords: 'blog, article, post',
+    title: 'Page Not Found | Prithvi Travels',
+    description: 'The requested blog post could not be found',
   };
 }
 

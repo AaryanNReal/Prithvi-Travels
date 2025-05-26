@@ -35,7 +35,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "src/app/visa-expert/VisaExpertPage"  ],
   "exclude": [
     "node_modules"
   ]

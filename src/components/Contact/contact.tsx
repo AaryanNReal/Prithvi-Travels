@@ -284,7 +284,7 @@ export default function ContactPage() {
             <div>
               <label className="block mb-2">Attachment</label>
               <FirebaseFileUploader
-                storagePath="prathviTravelsMedia"
+                storagePath="prathviTravelsMedia/helpdesk"
                 accept=".pdf,.doc,.docx,.jpg,.png"
                 maxSizeMB={15}
                 disabled={false}

@@ -147,7 +147,13 @@ export default function FeaturedPosts() {
 
   return (
     <section className="mb-12 mx-auto max-w-screen-xl mt-10 px-4 md:px-6 lg:px-8 border-b">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Featured Posts</h2>
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Featured Posts</h2>
+        <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          Discover our handpicked selection of featured tours. These exceptional experiences are 
+          carefully chosen to inspire your next adventure.
+        </p>
+      </div>
       
       <div className="relative">
         <div className="overflow-hidden relative max-w-5xl mx-auto">
@@ -177,6 +183,8 @@ export default function FeaturedPosts() {
                           name: post.categoryDetails.name,
                           slug: post.categoryDetails.slug
                         }}
+                        author={post.author || { name: 'Prithvi Travels Team', slug: '' }}
+                        
                       />
                     </div>
                   ))}

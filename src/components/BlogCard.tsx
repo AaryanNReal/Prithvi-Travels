@@ -119,17 +119,9 @@ const BlogCard: React.FC<BlogCardProps> = ({
                 <div className="flex items-center   ">
                   {author && (
                     <div className="flex items-center">
-                      <div className="relative rounded-4xl overflow-hidden mr-2">
-                        <Image
-                          src={author.image}
-                          alt={author.name}
-                          width={80}
-                          height={10}
-                          className="object-cover"
-                        />
-                      </div>
+                     
                       <span className="font-bold text-black border-r-2  p-2">{author.name}</span>
-                      {author.role && <span className="hidden sm:inline">• {author.role}</span>}
+                      
                     </div>
                   )}
                 </div>

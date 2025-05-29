@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
 import CruiseCard from '@/components/Cruises/cruise_card';
+import Head from 'next/head';
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
-import Link from 'next/link';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -16,6 +17,7 @@ interface Cruise {
   slug: string;
   description: string;
   imageURL: string;
+  location: string;
   categoryDetails: {
     name: string;
     slug: string;
@@ -26,12 +28,11 @@ interface Cruise {
   price: number | string;
   startDate: string;
   status: string;
-  location: string;
   cruiseType: string;
 }
 
-const FeaturedCruisesPage = () => {
-  const [featuredCruises, setFeaturedCruises] = useState<Cruise[]>([]);
+export default function FeaturedCruises() {
+  const [cruises, setCruises] = useState<Cruise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,9 +41,9 @@ const FeaturedCruisesPage = () => {
 
     const fetchFeaturedCruises = async () => {
       try {
-        const cruisesCollection = collection(db, 'cruises');
+        const cruisesRef = collection(db, 'cruises');
         const q = query(
-          cruisesCollection,
+          cruisesRef,
           where('isFeatured', '==', true),
           where('status', '==', 'active')
         );
@@ -51,17 +52,21 @@ const FeaturedCruisesPage = () => {
         
         if (!isMounted) return;
 
-        const cruises = querySnapshot.docs.map(doc => ({
+        const cruisesData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Cruise[];
 
-        setFeaturedCruises(cruises);
+        setCruises(cruisesData);
       } catch (err) {
-        console.error('Error fetching featured cruises:', err);
-        if (isMounted) setError('Failed to load featured cruises');
+        console.error('Error fetching cruises:', err);
+        if (isMounted) {
+          setError('Failed to load cruises. Please try again later.');
+        }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -94,27 +99,29 @@ const FeaturedCruisesPage = () => {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <>
+      <Head>
+        <title>Featured Cruise Packages | Your Travel Company</title>
+        <meta name="description" content="Explore our featured cruise vacation packages" />
+      </Head>
+
+      <main className="container mx-auto px-4  border-b py-8 mt-5">
         <Link href="/cruises">
-          <div className="text-center mb-12 cursor-pointer">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
-              Featured Cruise Packages
+          <div className="text-center mb-12">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
+              Editor's Choice: Cruise Getaways
             </h1>
-            <p className="mt-4 text-xl text-gray-600 dark:text-gray-300">
-              Discover our specially selected cruise experiences
-            </p>
           </div>
         </Link>
 
-        {featuredCruises.length === 0 ? (
+        {cruises.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-lg text-gray-600 dark:text-gray-300">
+            <p className="text-gray-500 dark:text-gray-400">
               No featured cruises available at the moment. Please check back later.
             </p>
           </div>
         ) : (
-          <div className="relative px-4 sm:px-6 lg:px-8">
+          <div className="relative">
             <Swiper
               modules={[Navigation, Pagination]}
               spaceBetween={30}
@@ -126,19 +133,19 @@ const FeaturedCruisesPage = () => {
                 768: { slidesPerView: 2, spaceBetween: 30 },
                 1024: { slidesPerView: 3, spaceBetween: 30 },
               }}
-              className="py-8"
+              className="py-4 px-2"
             >
-              {featuredCruises.map((cruise) => (
-                <SwiperSlide key={cruise.id} className="pb-12">
-                  <CruiseCard {...cruise} />
+              {cruises.map((cruise) => (
+                <SwiperSlide key={cruise.id} className="pb-10">
+                  <div className="h-full flex justify-center">
+                    <CruiseCard {...cruise} />
+                  </div>
                 </SwiperSlide>
               ))}
             </Swiper>
           </div>
         )}
-      </div>
-    </div>
+      </main>
+    </>
   );
-};
-
-export default FeaturedCruisesPage;
+}

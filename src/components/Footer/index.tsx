@@ -36,7 +36,7 @@ const Footer = () => {
     href="mailto:AlkaM@PrathviTravels.com" 
     className="text-base text-body-color dark:text-body-color-dark hover:text-primary transition-colors"
   >
-    AlkaM@PrathviTravels.com
+    alkaM@prathvitravels.com
   </a>
 </div>
                 </div>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from '@/app/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import MobileNumberInput from '@/components/PhoneInput';// Import the MobileNumberInput component
 
 interface UserData {
   uid?: string;
@@ -28,6 +29,7 @@ const Profile = () => {
     phone: ''
   });
   const [updateMessage, setUpdateMessage] = useState('');
+  const [phoneError, setPhoneError] = useState(false); // State for phone number validation
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -77,9 +79,22 @@ const Profile = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle phone number change from MobileNumberInput
+  const handlePhoneChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, phone: value }));
+    setPhoneError(false); // Reset error when phone changes
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    
+    // Basic phone validation (you can enhance this)
+    if (formData.phone && formData.phone.length < 10) {
+      setPhoneError(true);
+      setUpdateMessage('Please enter a valid phone number');
+      return;
+    }
     
     try {
       const usersRef = collection(db, 'users');
@@ -204,13 +219,10 @@ const Profile = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="phone">Phone</label>
-              <input
-                type="text"
-                id="phone"
-                name="phone"
+              <MobileNumberInput
                 value={formData.phone}
-                onChange={handleInputChange}
-                className="w-full border rounded p-2 focus:ring-blue-500 focus:border-blue-500"
+                onChange={handlePhoneChange}
+                error={phoneError}
               />
             </div>
 

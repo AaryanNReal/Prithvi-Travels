@@ -158,11 +158,7 @@ export default async function BlogList() {
                   name: blog.categoryDetails.name,
                   slug: blog.categoryDetails.slug,
                 }}
-                author={blog.createdBy ? {
-                  name: blog.createdBy.name,
-                  image: blog.createdBy.image,
-                  role: blog.createdBy.description
-                } : undefined}
+                
               />
             </div>
           ))

@@ -24,34 +24,36 @@ export async function generateMetadata(
     if (!querySnapshot.empty) {
       const blog = querySnapshot.docs[0].data();
       const seo = blog.seoDetails || {};
+      const categoryDetails = blog.categoryDetails || {};
       
-      if (!seo.title || !seo.description) {
-        throw new Error('Required SEO fields are missing');
-      }
+      // Fallback values
+      const title = seo.title || blog.title || categoryDetails.title || 'Visa Expert | Prithvi Travels';
+      const description = seo.description || blog.description || categoryDetails.description || 'Expert visa guidance for hassle-free international travel';
+      const keywords = seo.keywords?.join(', ') || '';
+      const imageUrl = seo.imageURL || blog.imageURL || `${baseUrl}/default-image.jpg`;
 
       const url = `${baseUrl}/blog/${category}/${slug}`;
-      const imageUrl = seo.imageURL || `${baseUrl}/default-image.jpg`;
 
       return {
-        title: seo.title,
-        description: seo.description,
-        keywords: seo.keywords?.join(', ') || '',
+        title: title,
+        description: description,
+        keywords: keywords,
         openGraph: {
-          title: seo.title,
-          description: seo.description,
+          title: title,
+          description: description,
           url: url,
           type: 'article',
           images: [{
             url: imageUrl,
             width: 1200,
             height: 630,
-            alt: seo.title,
+            alt: title,
           }],
         },
         twitter: {
           card: 'summary_large_image',
-          title: seo.title,
-          description: seo.description,
+          title: title,
+          description: description,
           images: [imageUrl],
         },
         alternates: {

@@ -1,8 +1,7 @@
-
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
 import TourCard from '@/components/Domestic/TourCard';
-
+import { Metadata } from 'next';
 
 async function getTours() {
   try {
@@ -35,6 +34,61 @@ async function getTours() {
     console.error('Error fetching tours:', error);
     return [];
   }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const tours = await getTours();
+  const featuredTours = tours.filter(tour => tour.isFeatured);
+  
+  return {
+    title: 'Explore Our Tour Packages | Travel Agency',
+    description: 'Discover our amazing collection of tour packages. From adventure trips to relaxing getaways, we have something for everyone.',
+    keywords: [
+      'tour packages',
+      'vacation deals',
+      'travel agency',
+      'holiday tours',
+      'adventure trips',
+      ...tours.map(tour => tour.location),
+      ...tours.map(tour => tour.tourType)
+    ].filter(Boolean).join(', '),
+    openGraph: {
+      title: 'Our Tour Packages | Travel Agency',
+      description: 'Browse our collection of handpicked tour packages for your next adventure.',
+      url: 'https://yourwebsite.com/tours',
+      siteName: 'Travel Agency',
+      images: featuredTours.length > 0 
+        ? [
+            {
+              url: featuredTours[0].imageURL,
+              width: 800,
+              height: 600,
+              alt: featuredTours[0].title,
+            }
+          ]
+        : [
+            {
+              url: '/default-tour-image.jpg',
+              width: 1200,
+              height: 630,
+              alt: 'Travel Agency Tours',
+            }
+          ],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Our Tour Packages | Travel Agency',
+      description: 'Browse our collection of handpicked tour packages for your next adventure.',
+      images: featuredTours.length > 0 
+        ? featuredTours[0].imageURL 
+        : '/default-tour-image.jpg',
+    },
+    alternates: {
+      canonical: 'https://yourwebsite.com/tours',
+    },
+  };
 }
 
 export default async function ToursPage() {

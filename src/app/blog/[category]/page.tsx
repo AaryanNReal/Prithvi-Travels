@@ -196,11 +196,7 @@ export default function CategoryPage() {
                 name: post.categoryDetails.name,
                 slug: post.categoryDetails.slug,
               }}
-              author={post.createdBy ? {
-                name: post.createdBy.name,
-                image: post.createdBy.image,
-                role: post.createdBy.description
-              } : undefined}
+              
               tags={post.tags ? Object.values(post.tags).map(tag => ({
                 id: tag.slug,
                 name: tag.name,

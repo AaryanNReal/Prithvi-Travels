@@ -108,15 +108,13 @@ export default function FeaturedDomesticTours() {
         <meta name="description" content="Explore our featured domestic tour packages" />
       </Head>
 
-      <main className="container mx-auto px-4 py-8">
-        <Link href="/tours/domestic">
+      <main className="container mx-auto px-4 py-8 mt-5">
+        <Link href="/tours">
           <div className="text-center mb-12">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-              Featured Domestic Tours
+             Top Trending Trips in India & Beyond
             </h1>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Explore our specially curated selection of domestic tour packages
-            </p>
+           
           </div>
         </Link>
 

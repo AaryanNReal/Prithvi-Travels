@@ -103,16 +103,7 @@ export default function FeaturedDomesticTours() {
       </Head>
 
       <main className="container mx-auto px-4 py-8 border-b">
-        <Link href="/tours/international">
-          <div className="text-center mb-12 cursor-pointer">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-              Featured International Tours
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Explore our specially curated selection of domestic tour packages
-            </p>
-          </div>
-        </Link>
+        
 
         {tours.length === 0 ? (
           <div className="text-center py-12">

@@ -156,11 +156,7 @@ export default function VisaExpertPage() {
               imageUrl={post.imageURL}
               imageAlt={post.title} // Using title as alt text since altText is not in schema
               categoryDetails={post.categoryDetails}
-              author={post.createdBy ? {
-                name: post.createdBy.name,
-                image: post.createdBy.image,
-                role: post.createdBy.description
-              } : undefined}
+              
               tags={post.tags ? Object.values(post.tags).map(tag => ({
                 id: tag.slug,
                 name: tag.name,

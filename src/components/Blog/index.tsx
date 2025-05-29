@@ -152,22 +152,25 @@ export default function FeaturedPosts() {
               className="py-4 px-2"
             >
               {posts.map((post) => (
-                <SwiperSlide key={post.id} className="pb-10">
-                  <div className="h-full flex justify-center">
-                    <BlogCard
-                      id={post.id}
-                      slug={post.slug}
-                      title={post.title}
-                      description={post.description}
-                      createdAt={post.createdAt?.toDate?.() ? post.createdAt.toDate().toISOString() : new Date().toISOString()}
-                      imageUrl={post.imageURL}
-                      imageAlt={post.title}
-                      categoryDetails={{
-                        name: post.categoryDetails.name,
-                        slug: post.categoryDetails.slug
-                      }}
-                      author={post.author || { name: 'Prithvi Travels Team', slug: 'prithvi-travels' }}
-                    />
+                <SwiperSlide key={post.id} className="pb-10 h-auto">
+                  {/* Fixed height container for uniform card sizes */}
+                  <div className="h-[500px] flex justify-center">
+                    <div className="w-full h-full">
+                      <BlogCard
+                        id={post.id}
+                        slug={post.slug}
+                        title={post.title}
+                        description={post.description}
+                        createdAt={post.createdAt?.toDate?.() ? post.createdAt.toDate().toISOString() : new Date().toISOString()}
+                        imageUrl={post.imageURL}
+                        imageAlt={post.title}
+                        categoryDetails={{
+                          name: post.categoryDetails.name,
+                          slug: post.categoryDetails.slug
+                        }}
+                        author={post.author || { name: 'Prithvi Travels Team', slug: 'prithvi-travels' }}
+                      />
+                    </div>
                   </div>
                 </SwiperSlide>
               ))}

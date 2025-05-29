@@ -102,7 +102,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
           </h2>
           
           {/* Description with consistent line clamping */}
-          <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-3 flex-grow">
+          <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-1 mb-3 flex-grow">
             {description}
           </p>
           

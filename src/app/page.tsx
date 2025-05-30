@@ -7,7 +7,7 @@ import Domestic from "@/components/Domestic/Domestic";
 import Hero from "@/components/Hero";
 import International from "@/components/International/Intertional";
 import Testimonials from "@/components/Testimonials";
-
+import SpecialOffersTours from "@/components/speacialoffer";
 // Enhanced background with more dynamic elements
 const BackgroundElements = () => (
   <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
@@ -227,6 +227,12 @@ export default function Home() {
           <div className="absolute  bg-gradient-to-r from-purple-50/50 to-blue-50/50" />
           <International />
         </div>
+
+          <div className="relative">
+          <div className="absolute  bg-gradient-to-r from-purple-50/50 to-blue-50/50" />
+          <SpecialOffersTours></SpecialOffersTours>
+        </div>
+        
         
         {/* Cruises Section */}
         <div className="relative">

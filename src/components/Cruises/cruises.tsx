@@ -6,10 +6,9 @@ import CruiseCard from '@/components/Cruises/cruise_card';
 import Head from 'next/head';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
+import { Navigation, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 
 interface Cruise {
   id: string;
@@ -105,17 +104,17 @@ export default function FeaturedCruises() {
         <meta name="description" content="Explore our featured cruise vacation packages" />
       </Head>
 
-      <main className="container mx-auto px-4  border-b py-8 mt-5">
+      <main className="container mx-auto px-4 border-b py-5">
         <Link href="/cruises">
           <div className="text-center mb-12">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
+            <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-2">
               Editor's Choice: Cruise Getaways
             </h1>
           </div>
         </Link>
 
         {cruises.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center">
             <p className="text-gray-500 dark:text-gray-400">
               No featured cruises available at the moment. Please check back later.
             </p>
@@ -123,20 +122,24 @@ export default function FeaturedCruises() {
         ) : (
           <div className="relative">
             <Swiper
-              modules={[Navigation, Pagination]}
+              modules={[Navigation, Autoplay]}
               spaceBetween={30}
               slidesPerView={1}
               navigation
-              pagination={{ clickable: true }}
+              autoplay={{
+                delay: 5000,
+                disableOnInteraction: false,
+              }}
+              loop={true}
               breakpoints={{
                 640: { slidesPerView: 1, spaceBetween: 20 },
                 768: { slidesPerView: 2, spaceBetween: 30 },
                 1024: { slidesPerView: 3, spaceBetween: 30 },
               }}
-              className="py-4 px-2"
+              className="py-4"
             >
               {cruises.map((cruise) => (
-                <SwiperSlide key={cruise.id} className="pb-10">
+                <SwiperSlide key={cruise.id}>
                   <div className="h-full flex justify-center">
                     <CruiseCard {...cruise} />
                   </div>

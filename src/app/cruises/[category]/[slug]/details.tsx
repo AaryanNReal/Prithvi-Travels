@@ -6,9 +6,18 @@ import { collection, query, where, getDocs, doc, getDoc, serverTimestamp, setDoc
 import { db, auth } from '@/app/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import Image from 'next/image';
-
 import Link from 'next/link';
-import { CalendarIcon, MapPinIcon, CurrencyDollarIcon, TagIcon, UserIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import { 
+  CalendarIcon, 
+  MapPinIcon, 
+  CurrencyDollarIcon, 
+  TagIcon, 
+  UserIcon, 
+  PhoneIcon, 
+  EnvelopeIcon,
+  UsersIcon,
+  
+} from '@heroicons/react/24/outline';
 import MobileNumberInput from '@/components/PhoneInput';
 
 interface Cruise {
@@ -34,6 +43,7 @@ interface Cruise {
   videoURL?: string;
   createdAt?: string;
   updatedAt?: string;
+  sailingDates?: string[];
 }
 
 interface UserData {
@@ -49,6 +59,12 @@ interface FormData {
   email: string;
   phone: string;
   message: string;
+  numberofTravellers: number;
+  numberofAdults: number;
+  numberofChildren: number;
+  numberofInfants: number;
+  preferredDate: string;
+  customRequirement: string;
 }
 
 export default function CruiseDetailPage() {
@@ -62,24 +78,28 @@ export default function CruiseDetailPage() {
     name: '',
     email: '',
     phone: '',
-    message: ''
+    message: '',
+    numberofTravellers: 1,
+    numberofAdults: 1,
+    numberofChildren: 0,
+    numberofInfants: 0,
+    preferredDate: '',
+    customRequirement: ''
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // New state for button disable
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
   const slug = decodeURIComponent(params.slug as string);
 
-  // Auth state handler with users collection lookup
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {
         try {
-          // Query users collection for matching document
           const usersQuery = query(
             collection(db, 'users'),
             where('uid', '==', currentUser.uid)
@@ -91,41 +111,27 @@ export default function CruiseDetailPage() {
             const data = userDoc.data() as UserData;
             setUserData(data);
             
-            // Pre-fill form with user data from users collection
-            setFormData({
+            setFormData(prev => ({
+              ...prev,
               name: data.name || currentUser.displayName || '',
               email: data.email || currentUser.email || '',
               phone: data.phone || '',
-              message: ''
-            });
+            }));
           } else {
-            // No user document found - use auth user data
-            setFormData({
+            setFormData(prev => ({
+              ...prev,
               name: currentUser.displayName || '',
               email: currentUser.email || '',
-              phone: '',
-              message: ''
-            });
+            }));
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
-          // Fallback to auth user data if query fails
-          setFormData({
+          setFormData(prev => ({
+            ...prev,
             name: currentUser.displayName || '',
             email: currentUser.email || '',
-            phone: '',
-            message: ''
-          });
+          }));
         }
-      } else {
-        // User not logged in - keep form empty
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          message: ''
-        });
-        setUserData(null);
       }
       setLoadingUser(false);
     });
@@ -133,7 +139,6 @@ export default function CruiseDetailPage() {
     return () => unsubscribe();
   }, []);
 
-  // Fetch cruise data
   useEffect(() => {
     const fetchCruise = async () => {
       if (!slug) return;
@@ -190,6 +195,12 @@ export default function CruiseDetailPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numValue = parseInt(value) || 0;
+    setFormData(prev => ({ ...prev, [name]: numValue }));
+  };
+
   const handlePhoneChange = (value: string) => {
     setFormData(prev => ({ ...prev, phone: value }));
   };
@@ -197,34 +208,36 @@ export default function CruiseDetailPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent multiple submissions
     if (isSubmitting) return;
     
-    setIsSubmitting(true); // Disable button immediately
+    setIsSubmitting(true);
     
     try {
       const bookingId = `PTID${Date.now()}`;
       
-      // Prepare userDetails - use data from users collection if available, otherwise form data
       const userDetails = {
         name: userData?.name || formData.name,
         email: userData?.email || formData.email,
         phone: userData?.phone || formData.phone,
         uid: user?.uid || null,
-        userID: userData?.userID || user?.uid || `GUEST${Date.now()}`
+        userID: userData?.userID || user?.uid || `GUEST${Date.now()}`,
+        numberofTravellers: formData.numberofTravellers,
+        numberofAdults: formData.numberofAdults,
+        numberofChildren: formData.numberofChildren,
+        numberofInfants: formData.numberofInfants,
+        preferredDate: formData.preferredDate,
+        customRequirement: formData.customRequirement
       };
 
-      // Prepare cruiseDetails
       const cruiseDetails = {
         id: cruise?.id,
         title: cruise?.title,
         ...cruise
       };
 
-      // Create the booking document
       await setDoc(doc(db, 'bookings', bookingId), {
         bookingId,
-        bookingType:"Cruise",
+        bookingType: "Cruise",
         status: 'captured',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -234,16 +247,15 @@ export default function CruiseDetailPage() {
       });
 
       setFormSubmitted(true);
-      setFormData(prev => ({ ...prev, message: '' }));
       
       setTimeout(() => {
         setFormSubmitted(false);
-        setIsSubmitting(false); // Re-enable button after success message disappears
+        setIsSubmitting(false);
       }, 3000);
 
     } catch (error) {
       console.error('Booking submission failed:', error);
-      setIsSubmitting(false); // Re-enable button on error
+      setIsSubmitting(false);
     }
   };
 
@@ -334,6 +346,21 @@ export default function CruiseDetailPage() {
             </div>
           </div>
           
+          {/* Sailing Dates Section */}
+          {cruise.sailingDates && cruise.sailingDates.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Available Sailing Dates</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {cruise.sailingDates.map((date, index) => (
+                  <div key={index} className="flex items-center bg-blue-50 p-3 rounded-lg">
+                    <CalendarIcon className="h-5 w-5 text-blue-500 mr-2" />
+                    <span className="text-gray-700">{date}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           {cruise.videoURL && (
             <>
               <h2 className="mt-8 font-bold text-2xl text-gray-800">Video Of The Cruise</h2>
@@ -354,7 +381,7 @@ export default function CruiseDetailPage() {
         {/* Booking Form Sidebar */}
         <div className="md:w-1/3 space-y-6 mt-16">
           <div className="mt-12 bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Request More Information</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Booking Inquiry</h2>
             {formSubmitted ? (
               <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                 Thank you for your inquiry! We'll contact you shortly.
@@ -378,7 +405,6 @@ export default function CruiseDetailPage() {
                       </div>
                     </div>
                     
-                    {/* Only show phone input if not in userData */}
                     {!userData?.phone && (
                       <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
@@ -457,6 +483,144 @@ export default function CruiseDetailPage() {
                   </>
                 )}
 
+                {/* Traveler Details Section */}
+                <div className="space-y-4 pt-4 border-t border-gray-200">
+  <h3 className="font-medium text-gray-800">Traveler Information</h3>
+  
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <label htmlFor="numberofAdults" className="block text-sm font-medium text-gray-700 mb-1">
+        Adults (⫺ 12)
+      </label>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <UserIcon className="h-5 w-5 text-gray-400" />
+        </div>
+        <input
+          type="number"
+          id="numberofAdults"
+          name="numberofAdults"
+          min="1"
+          value={formData.numberofAdults}
+          onChange={(e) => {
+            const adults = parseInt(e.target.value) || 0;
+            setFormData(prev => ({
+              ...prev,
+              numberofAdults: adults,
+              numberofTravellers: adults + prev.numberofChildren + prev.numberofInfants
+            }));
+          }}
+          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+          required
+        />
+      </div>
+    </div>
+
+    <div>
+      <label htmlFor="numberofChildren" className="block text-sm font-medium text-gray-700 mb-1">
+        Children (⫺ 2 & ⧀ 12)
+      </label>
+      <div className="relative">
+        
+        <input
+          type="number"
+          id="numberofChildren"
+          name="numberofChildren"
+          min="0"
+          value={formData.numberofChildren}
+          onChange={(e) => {
+            const children = parseInt(e.target.value) || 0;
+            setFormData(prev => ({
+              ...prev,
+              numberofChildren: children,
+              numberofTravellers: prev.numberofAdults + children + prev.numberofInfants
+            }));
+          }}
+          className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label htmlFor="numberofInfants" className="block text-sm font-medium text-gray-700 mb-1">
+        Infants (⧀ 2)
+      </label>
+      <div className="relative">
+       
+        <input
+          type="number"
+          id="numberofInfants"
+          name="numberofInfants"
+          min="0"
+          value={formData.numberofInfants}
+          onChange={(e) => {
+            const infants = parseInt(e.target.value) || 0;
+            setFormData(prev => ({
+              ...prev,
+              numberofInfants: infants,
+              numberofTravellers: prev.numberofAdults + prev.numberofChildren + infants
+            }));
+          }}
+          className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label htmlFor="numberofTravellers" className="block text-sm font-medium text-gray-700 mb-1">
+        Total Travelers
+      </label>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <UsersIcon className="h-5 w-5 text-gray-400" />
+        </div>
+        <input
+          type="number"
+          id="numberofTravellers"
+          name="numberofTravellers"
+          value={formData.numberofAdults + formData.numberofChildren + formData.numberofInfants}
+          readOnly
+          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border bg-gray-100"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div className="col-span-2">
+    <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
+      Preferred Travel Date
+    </label>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <CalendarIcon className="h-5 w-5 text-gray-400" />
+      </div>
+      <input
+        type="date"
+        id="preferredDate"
+        name="preferredDate"
+        value={formData.preferredDate}
+        onChange={handleInputChange}
+        className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+      />
+    </div>
+  </div>
+
+  <div>
+    <label htmlFor="customRequirement" className="block text-sm font-medium text-gray-700 mb-1">
+      Special Requirements
+    </label>
+    <textarea
+      id="customRequirement"
+      name="customRequirement"
+      rows={3}
+      value={formData.customRequirement}
+      onChange={handleInputChange}
+      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 py-2 border"
+      placeholder="Any special requests"
+    />
+  </div>
+</div>
+
                 <div>
                   <button
                     type="submit"
@@ -473,7 +637,7 @@ export default function CruiseDetailPage() {
                         Processing...
                       </div>
                     ) : (
-                      user ? 'Request a Call Back' : 'Submit Inquiry'
+                      user ? 'Submit Booking Inquiry' : 'Submit Inquiry'
                     )}
                   </button>
                 </div>

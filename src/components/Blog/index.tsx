@@ -6,10 +6,9 @@ import BlogCard from '../BlogCard';
 import Head from 'next/head';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
+import { Navigation, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 
 interface Author {
   name: string;
@@ -42,7 +41,7 @@ interface BlogPost {
     description: string;
   }>;
   updatedAt?: any;
-  author?: Author; // Make author optional
+  author?: Author;
 }
 
 export default function FeaturedPosts() {
@@ -121,7 +120,7 @@ export default function FeaturedPosts() {
       <main className="container mx-auto border-t px-4 py-8 mt-5">
         <Link href="/blog">
           <div className="text-center mb-12">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
+            <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-2">
               Featured Travel Stories
             </h1>
             <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
@@ -139,21 +138,24 @@ export default function FeaturedPosts() {
         ) : (
           <div className="relative">
             <Swiper
-              modules={[Navigation, Pagination]}
+              modules={[Navigation, Autoplay]}
               spaceBetween={30}
               slidesPerView={1}
               navigation
-              pagination={{ clickable: true }}
+              autoplay={{
+                delay: 5000,
+                disableOnInteraction: false,
+              }}
+              loop={true}
               breakpoints={{
                 640: { slidesPerView: 1, spaceBetween: 20 },
                 768: { slidesPerView: 2, spaceBetween: 30 },
                 1024: { slidesPerView: 3, spaceBetween: 30 },
               }}
-              className="py-4 px-2"
+              className="py-4"
             >
               {posts.map((post) => (
-                <SwiperSlide key={post.id} className="pb-10 h-auto">
-                  {/* Fixed height container for uniform card sizes */}
+                <SwiperSlide key={post.id} className="h-auto">
                   <div className="h-[500px] flex justify-center">
                     <div className="w-full h-full">
                       <BlogCard

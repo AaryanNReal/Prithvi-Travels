@@ -6,10 +6,10 @@ import TourCard from '@/components/Domestic/TourCard';
 import Head from 'next/head';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
+import { Navigation, Autoplay } from 'swiper/modules'; // Removed Pagination, added Autoplay
 import 'swiper/css';
 import 'swiper/css/navigation';
-import 'swiper/css/pagination';
+import 'swiper/css/autoplay'; // Add autoplay CSS
 
 interface Tour {
   id: string;
@@ -37,7 +37,7 @@ export default function FeaturedDomesticTours() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true; // Flag to track component mount status
+    let isMounted = true;
 
     const fetchFeaturedDomesticTours = async () => {
       try {
@@ -51,7 +51,7 @@ export default function FeaturedDomesticTours() {
 
         const querySnapshot = await getDocs(q);
         
-        if (!isMounted) return; // Don't update state if component unmounted
+        if (!isMounted) return;
 
         const toursData = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -71,10 +71,8 @@ export default function FeaturedDomesticTours() {
       }
     };
 
-    // Start loading data immediately
     fetchFeaturedDomesticTours();
 
-    // Cleanup function
     return () => {
       isMounted = false;
     };
@@ -108,18 +106,17 @@ export default function FeaturedDomesticTours() {
         <meta name="description" content="Explore our featured domestic tour packages" />
       </Head>
 
-      <main className="container mx-auto px-4 py-8 mt-5">
+      <main className="container mt-7 mx-auto px-4">
         <Link href="/tours">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
+          <div className="text-center mb-8">
+            <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-2">
              Top Trending Trips in India & Beyond
             </h1>
-           
           </div>
         </Link>
 
         {tours.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center">
             <p className="text-gray-500 dark:text-gray-400">
               No featured domestic tours available at the moment. Please check back later.
             </p>
@@ -127,11 +124,15 @@ export default function FeaturedDomesticTours() {
         ) : (
           <div className="relative">
             <Swiper
-              modules={[Navigation, Pagination]}
+              modules={[Navigation, Autoplay]} // Removed Pagination, added Autoplay
               spaceBetween={30}
               slidesPerView={1}
               navigation
-              pagination={{ clickable: true }}
+              autoplay={{
+                delay: 5000 , // Rotate every 3 seconds
+                disableOnInteraction: false, // Continue autoplay after user interaction
+              }}
+              loop={true} // Enable infinite loop
               breakpoints={{
                 640: { slidesPerView: 1, spaceBetween: 20 },
                 768: { slidesPerView: 2, spaceBetween: 30 },
@@ -140,7 +141,7 @@ export default function FeaturedDomesticTours() {
               className="py-4 px-2"
             >
               {tours.map((tour) => (
-                <SwiperSlide key={tour.id} className="pb-10">
+                <SwiperSlide key={tour.id}>
                   <div className="h-full flex justify-center">
                     <TourCard {...tour} />
                   </div>

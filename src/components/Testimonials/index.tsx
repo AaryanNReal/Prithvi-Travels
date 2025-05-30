@@ -1,6 +1,9 @@
 import { Testimonial } from "@/types/testimonial";
 import SectionTitle from "../Common/SectionTitle";
 import SingleTestimonial from "./SingleTestimonial";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay } from 'swiper/modules';
+import 'swiper/css';
 
 const testimonialData: Testimonial[] = [
   {
@@ -30,12 +33,11 @@ const testimonialData: Testimonial[] = [
     image: "/images/testimonials/auth-03.png",
     star: 5,
   },
-  
 ];
 
 const Testimonials = () => {
   return (
-    <section className="dark:bg-bg-color-dark relative z-10 py-16 md:py-20 lg:py-28">
+    <section className="dark:bg-bg-color-dark relative z-10 mt-3">
       <div className="container">
         <SectionTitle
           title="What Our Travelers Say"
@@ -43,10 +45,30 @@ const Testimonials = () => {
           center
         />
 
-        <div className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
+        <div className="hidden md:grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
           {testimonialData.map((testimonial) => (
             <SingleTestimonial key={testimonial.id} testimonial={testimonial} />
           ))}
+        </div>
+
+        {/* Mobile Slider */}
+        <div className="md:hidden">
+          <Swiper
+            spaceBetween={30}
+            slidesPerView={1}
+            autoplay={{
+              delay: 5000,
+              disableOnInteraction: false,
+            }}
+            modules={[Autoplay]}
+            className="testimonial-swiper"
+          >
+            {testimonialData.map((testimonial) => (
+              <SwiperSlide key={testimonial.id}>
+                <SingleTestimonial testimonial={testimonial} />
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
       </div>
       <div className="absolute right-0 top-5 z-[-1]">

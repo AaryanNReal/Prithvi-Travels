@@ -128,8 +128,8 @@ const Hero = () => {
 
   // Memoized components
   const errorComponent = useMemo(() => (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8 mt-16 md:mt-20">
-      <div className="mx-auto max-w-7xl">
+    <div className="w-full px-3 sm:px-4 lg:px-6 py-8 mt-16 md:mt-20">
+      <div className="mx-auto max-w-[1400px]">
         <div className="flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-lg border border-gray-200 p-8 md:p-12 min-h-[300px] sm:min-h-[400px] md:min-h-[500px]">
           <div className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-6">
@@ -150,8 +150,8 @@ const Hero = () => {
   ), [error, fetchSliderImages]);
 
   const loadingPlaceholder = useMemo(() => (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8 mt-16 md:mt-20">
-      <div id="hero-carousel" className="mx-auto max-w-7xl">
+    <div className="w-full px-3 sm:px-4 lg:px-6 py-8 mt-16 md:mt-20">
+      <div id="hero-carousel" className="mx-auto max-w-[1400px]">
         <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl overflow-hidden shadow-lg aspect-[16/9] sm:aspect-[21/9] md:aspect-[2.5/1] flex items-center justify-center">
           <div className="space-y-4 text-center">
             <div className="flex space-x-2 justify-center">
@@ -174,10 +174,10 @@ const Hero = () => {
   if (!isVisible || slides.length === 0) return loadingPlaceholder;
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 md:py-8 mt-16 md:mt-20">
+    <div className="w-full px-3 sm:px-4 lg:px-6 py-6 md:py-8 mt-16 md:mt-20">
       <div 
         id="hero-carousel"
-        className="mx-auto max-w-7xl group"
+        className="mx-auto max-w-[1400px] group"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -192,7 +192,7 @@ const Hero = () => {
               >
                 <Link
                   href={slide.redirectionURL}
-                  className="block w-full h-full relative group/slide"
+                  className="block w-full h-full relative group/slide overflow-hidden rounded-2xl"
                   target={slide.redirectionURL.startsWith('http') ? '_blank' : '_self'}
                   rel={slide.redirectionURL.startsWith('http') ? 'noopener noreferrer' : undefined}
                   prefetch={false} // Disable prefetching for non-critical links
@@ -204,15 +204,15 @@ const Hero = () => {
                     priority={index === 0} // Only prioritize first image
                     loading={index === 0 ? 'eager' : 'lazy'}
                     quality={85} // Reduce quality for smaller files
-                    className="object-cover w-full h-full cursor-pointer transition-transform duration-700 group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1440px"
+                    className="object-cover w-full h-full cursor-pointer transition-transform duration-700 group-hover:scale-105 rounded-2xl"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1400px"
                     onError={(e) => {
                       const target = e.currentTarget;
                       target.src = '/fallback-image.jpg';
                       target.onerror = null;
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 transition-opacity duration-300 group-hover/slide:opacity-75"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 transition-opacity duration-300 group-hover/slide:opacity-75 rounded-2xl"></div>
                 </Link>
               </div>
             ))}

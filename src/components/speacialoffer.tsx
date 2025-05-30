@@ -6,7 +6,7 @@ import TourCard from '@/components/Domestic/TourCard';
 import Head from 'next/head';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Autoplay } from 'swiper/modules'; // Removed Pagination, added Autoplay
+import { Navigation, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/autoplay';
@@ -23,6 +23,7 @@ interface Tour {
     slug: string;
   };
   isFeatured: boolean;
+  isOffered: boolean;
   numberofDays: number;
   numberofNights: number;
   price: number;
@@ -31,7 +32,7 @@ interface Tour {
   tourType: string;
 }
 
-export default function FeaturedDomesticTours() {
+export default function SpecialOffersTours() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,13 +40,12 @@ export default function FeaturedDomesticTours() {
   useEffect(() => {
     let isMounted = true;
 
-    const fetchFeaturedDomesticTours = async () => {
+    const fetchSpecialOfferTours = async () => {
       try {
         const toursRef = collection(db, 'tours');
         const q = query(
           toursRef,
-          where('isFeatured', '==', true),
-          where('tourType', '==', 'international'),
+          where('isOffered', '==', true),
           where('status', '==', 'active')
         );
 
@@ -61,13 +61,17 @@ export default function FeaturedDomesticTours() {
         setTours(toursData);
       } catch (err) {
         console.error('Error fetching tours:', err);
-        if (isMounted) setError('Failed to load tours. Please try again later.');
+        if (isMounted) {
+          setError('Failed to load special offers. Please try again later.');
+        }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchFeaturedDomesticTours();
+    fetchSpecialOfferTours();
 
     return () => {
       isMounted = false;
@@ -79,7 +83,7 @@ export default function FeaturedDomesticTours() {
       <div className="min-h-[300px] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-lg">Loading featured tours...</p>
+          <p className="mt-4 text-lg">Loading special offers...</p>
         </div>
       </div>
     );
@@ -98,15 +102,26 @@ export default function FeaturedDomesticTours() {
   return (
     <>
       <Head>
-        <title>Featured International Tours | Your Travel Company</title>
-        <meta name="description" content="Explore our featured international tour packages" />
+        <title>Special Offer Tours | Your Travel Company</title>
+        <meta name="description" content="Explore our special offer tour packages" />
       </Head>
 
-      <main className="container mx-auto  p-5 px-4 border-b">
+      <main className="container p-4 border-b mx-auto  px-4">
+        <Link href="/tours">
+          <div className="text-center mb-8">
+            <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-2">
+              Limited Time Special Offers
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              Exclusive deals on our best tours
+            </p>
+          </div>
+        </Link>
+
         {tours.length === 0 ? (
           <div className="text-center">
             <p className="text-gray-500 dark:text-gray-400">
-              No featured International tours available at the moment. Please check back later.
+              No special offers available at the moment. Please check back later.
             </p>
           </div>
         ) : (
@@ -117,7 +132,7 @@ export default function FeaturedDomesticTours() {
               slidesPerView={1}
               navigation
               autoplay={{
-                delay: 3000,
+                delay: 5000,
                 disableOnInteraction: false,
               }}
               loop={true}
@@ -126,7 +141,7 @@ export default function FeaturedDomesticTours() {
                 768: { slidesPerView: 2, spaceBetween: 30 },
                 1024: { slidesPerView: 3, spaceBetween: 30 },
               }}
-              className="py-4"
+              className="py-4 px-2"
             >
               {tours.map((tour) => (
                 <SwiperSlide key={tour.id}>

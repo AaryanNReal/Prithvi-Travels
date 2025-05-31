@@ -9,7 +9,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
-
+import SectionTitle from '../Common/SectionTitle';
 interface Cruise {
   id: string;
   title: string;
@@ -107,9 +107,9 @@ export default function FeaturedCruises() {
       <main className="container mx-auto px-4 border-b py-5">
         <Link href="/cruises">
           <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-2">
-              Editor's Choice: Cruise Getaways
-            </h1>
+            <SectionTitle title='Editor’s Choice: Cruise Getaway'
+             paragraph="Don't just take our word for it - hear from our globetrotters about their unforgettable journeys crafted by our expert team."
+          center></SectionTitle>
           </div>
         </Link>
 

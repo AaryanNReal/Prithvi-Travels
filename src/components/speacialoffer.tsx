@@ -10,7 +10,7 @@ import { Navigation, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/autoplay';
-
+import SectionTitle from './Common/SectionTitle';
 interface Tour {
   id: string;
   title: string;
@@ -109,12 +109,9 @@ export default function SpecialOffersTours() {
       <main className="container p-4 border-b mx-auto  px-4">
         <Link href="/tours">
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-2">
-              Limited Time Special Offers
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
-              Exclusive deals on our best tours
-            </p>
+            <SectionTitle title="Grab the Offer While It Lasts!"
+          paragraph="Don't just take our word for it - hear from our globetrotters about their unforgettable journeys crafted by our expert team."
+          center></SectionTitle>
           </div>
         </Link>
 

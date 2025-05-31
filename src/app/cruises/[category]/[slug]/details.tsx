@@ -484,7 +484,7 @@ export default function CruiseDetailPage() {
                 )}
 
                 {/* Traveler Details Section */}
-                <div className="space-y-4 pt-4 border-t border-gray-200">
+ <div className="space-y-4 pt-4 border-t border-gray-200">
   <h3 className="font-medium text-gray-800">Traveler Information</h3>
   
   <div className="grid grid-cols-2 gap-4">
@@ -619,7 +619,7 @@ export default function CruiseDetailPage() {
       placeholder="Any special requests"
     />
   </div>
-</div>
+</div> 
 
                 <div>
                   <button

@@ -5,7 +5,7 @@ import { collection, query, where, getDocs, setDoc, doc, serverTimestamp } from 
 import { db, auth } from '@/app/lib/firebase'
 import { useEffect, useState, useRef } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
-import { EyeIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon, CurrencyDollarIcon, ArrowRightIcon, UserIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon, CurrencyDollarIcon, ArrowRightIcon, UserIcon, PhoneIcon, EnvelopeIcon, UsersIcon, CalendarIcon } from '@heroicons/react/24/outline'
 import Slider from 'react-slick'
 import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
@@ -40,7 +40,7 @@ interface ItineraryItem {
 
 interface UserData {
   uid?: string
-  name?:string
+  name?: string
   email?: string | null
   displayName?: string | null
   phone?: string
@@ -52,6 +52,12 @@ interface FormData {
   email: string
   phone: string
   userID?: string
+  numberofAdults: number
+  numberofChildren: number
+  numberofInfants: number
+  numberofTravellers: number
+  preferredDate: string
+  customRequirement: string
 }
 
 export default function CreateCustomItineraryPage() {
@@ -66,10 +72,16 @@ export default function CreateCustomItineraryPage() {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    numberofAdults: 1,
+    numberofChildren: 0,
+    numberofInfants: 0,
+    numberofTravellers: 1,
+    preferredDate: '',
+    customRequirement: ''
   })
   const [formSubmitted, setFormSubmitted] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false) // New state for submission loading
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Slider settings with custom arrows
   const sliderSettings = {
@@ -109,7 +121,7 @@ export default function CreateCustomItineraryPage() {
     fetchData()
   }, [location])
 
-  // Auth state listener (identical to TourDetailPage)
+  // Auth state listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser)
@@ -127,32 +139,41 @@ export default function CreateCustomItineraryPage() {
             const userData = userDoc.data() as UserData
             setUserData(userData)
             
-            setFormData({
+            setFormData(prev => ({
+              ...prev,
               name: userData.name || currentUser.displayName || '',
               email: currentUser.email || '',
               phone: userData.phone || '',
               userID: userData.userID || "",
-            })
+            }))
           } else {
-            setFormData({
+            setFormData(prev => ({
+              ...prev,
               name: currentUser.displayName || '',
               email: currentUser.email || '',
               phone: ''
-            })
+            }))
           }
         } catch (error) {
           console.error('Error fetching user data:', error)
-          setFormData({
+          setFormData(prev => ({
+            ...prev,
             name: currentUser.displayName || '',
             email: currentUser.email || '',
             phone: ''
-          })
+          }))
         }
       } else {
         setFormData({
           name: '',
           email: '',
-          phone: ''
+          phone: '',
+          numberofAdults: 1,
+          numberofChildren: 0,
+          numberofInfants: 0,
+          numberofTravellers: 1,
+          preferredDate: '',
+          customRequirement: ''
         })
         setUserData(null)
       }
@@ -182,7 +203,7 @@ export default function CreateCustomItineraryPage() {
     setSelectedItems(items)
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
@@ -191,56 +212,89 @@ export default function CreateCustomItineraryPage() {
     setFormData(prev => ({ ...prev, phone: value }))
   }
 
-  // Updated booking submission with loading state
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleTravelerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    const numValue = parseInt(value) || 0
     
-    // Prevent multiple submissions
-    if (isSubmitting) return
-    
-    setIsSubmitting(true)
-    
-    try {
-      const bookingId = `PTID${Date.now()}`
+    setFormData(prev => {
+      let newState = { ...prev, [name]: numValue }
       
-      const userId = user?.uid || `GUEST${Date.now()}`
-      const userID = userData?.userID || userId
-      const userDetails = {
-        name: userData?.displayName || formData.name,
-        email: userData?.email || formData.email,
-        phone: userData?.phone || formData.phone,
-        uid: user?.uid || null,
-        userID: userID
+      // Calculate total travelers when any of the traveler counts change
+      if (['numberofAdults', 'numberofChildren', 'numberofInfants'].includes(name)) {
+        newState.numberofTravellers = 
+          newState.numberofAdults + 
+          newState.numberofChildren + 
+          newState.numberofInfants
       }
-
-      const itineraryDetails = {
-        id: bookingId,
-        items: selectedItems,
-        totalCost,
-        days,
-        nights,
-        location,
-        createdAt: serverTimestamp()
-      }
-
-      await setDoc(doc(db, 'bookings', bookingId), {
-        bookingId,
-        bookingType:"Custom Itinerary",
-        status: 'captured',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        userDetails,
-        itineraryDetails
-      })
-
-      setFormSubmitted(true)
-      setTimeout(() => setFormSubmitted(false), 3000)
-    } catch (error) {
-      console.error('Booking submission failed:', error)
-    } finally {
-      setIsSubmitting(false)
-    }
+      
+      return newState
+    })
   }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  
+  if (isSubmitting) return
+  
+  setIsSubmitting(true)
+  
+  try {
+    const bookingId = `PTID${Date.now()}`
+    const userId = user?.uid || `GUEST${Date.now()}`
+    const userID = userData?.userID || userId
+
+    // Format the itinerary items into the new schema
+    const itineraryDetails = selectedItems.reduce((acc, item, index) => {
+      const dayKey = `Day${index + 1}`
+      return {
+        ...acc,
+        [dayKey]: {
+          title: item.title,
+          description: item.description,
+          imageURL: item.images,
+          location: item.location
+        }
+      }
+    }, {})
+
+    // Create the booking document with the new schema
+    await setDoc(doc(db, 'bookings', bookingId), {
+      bookingId,
+      bookingType: "Custom Itinerary",
+      status: 'captured',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      tourDetails: {
+        title: `Custom ${location} Itinerary`,
+        
+        location,
+        numberofDays: days,
+        numberofNights: nights,
+        price: totalCost,
+        itenaries: itineraryDetails
+      },
+      userDetails: {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        uid: user?.uid || null,
+        userID,
+        customRequirement: formData.customRequirement,
+        numberofAdults: formData.numberofAdults,
+        numberofChildren: formData.numberofChildren,
+        numberofInfants: formData.numberofInfants,
+        numberofTravellers: formData.numberofTravellers,
+        preferredDate: formData.preferredDate
+      }
+    })
+
+    setFormSubmitted(true)
+    setTimeout(() => setFormSubmitted(false), 3000)
+  } catch (error) {
+    console.error('Booking submission failed:', error)
+  } finally {
+    setIsSubmitting(false)
+  }
+}
 
   if (loading) {
     return (
@@ -406,15 +460,130 @@ export default function CreateCustomItineraryPage() {
               <div className="bg-green-50 p-3 rounded-lg col-span-2">
                 <p className="text-xs text-gray-500">Total Cost</p>
                 <p className="text-2xl font-bold">₹{totalCost.toLocaleString()}</p>
-                
               </div>
-              <p className='text-red-400 '> * This Price is just an estimate </p>
-
+              <p className='text-red-400 text-sm col-span-2'>* This Price is just an estimate</p>
             </div>
 
-            {/* Booking Form with disabled button functionality */}
+            {/* Traveler Information */}
             {selectedItems.length > 0 && (
-              <div>
+              <div className="space-y-4 pt-4 border-t border-gray-200">
+                <h3 className="font-medium text-gray-800">Traveler Information</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="numberofAdults" className="block text-sm font-medium text-gray-700 mb-1">
+                      Adults (12+)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <UserIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="number"
+                        id="numberofAdults"
+                        name="numberofAdults"
+                        min="1"
+                        value={formData.numberofAdults}
+                        onChange={handleTravelerChange}
+                        className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="numberofChildren" className="block text-sm font-medium text-gray-700 mb-1">
+                      Children (2-12)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        id="numberofChildren"
+                        name="numberofChildren"
+                        min="0"
+                        value={formData.numberofChildren}
+                        onChange={handleTravelerChange}
+                        className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="numberofInfants" className="block text-sm font-medium text-gray-700 mb-1">
+                      Infants (&lt;2)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        id="numberofInfants"
+                        name="numberofInfants"
+                        min="0"
+                        value={formData.numberofInfants}
+                        onChange={handleTravelerChange}
+                        className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="numberofTravellers" className="block text-sm font-medium text-gray-700 mb-1">
+                      Total Travelers
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <UsersIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="number"
+                        id="numberofTravellers"
+                        name="numberofTravellers"
+                        value={formData.numberofTravellers}
+                        readOnly
+                        className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border bg-gray-100"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-span-2">
+                  <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
+                    Preferred Travel Date
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <CalendarIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="date"
+                      id="preferredDate"
+                      name="preferredDate"
+                      value={formData.preferredDate}
+                      onChange={handleInputChange}
+                      className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="customRequirement" className="block text-sm font-medium text-gray-700 mb-1">
+                    Special Requirements
+                  </label>
+                  <textarea
+                    id="customRequirement"
+                    name="customRequirement"
+                    rows={3}
+                    value={formData.customRequirement}
+                    onChange={handleInputChange}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 py-2 border"
+                    placeholder="Any special requests"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Booking Form */}
+            {selectedItems.length > 0 && (
+              <div className="mt-4">
                 {formSubmitted ? (
                   <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
                     Thank you for your inquiry! We'll contact you shortly.
@@ -435,7 +604,7 @@ export default function CreateCustomItineraryPage() {
                         </div>
                         
                         {!userData?.phone && (
-                          <div className=''>
+                          <div>
                             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                               Phone Number <span className="text-red-500">*</span>
                             </label>

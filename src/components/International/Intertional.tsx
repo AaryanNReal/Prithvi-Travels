@@ -10,7 +10,7 @@ import { Navigation, Autoplay } from 'swiper/modules'; // Removed Pagination, ad
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/autoplay';
-
+import SectionTitle from '../Common/SectionTitle';
 interface Tour {
   id: string;
   title: string;

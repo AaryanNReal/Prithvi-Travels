@@ -10,7 +10,7 @@ import { Navigation, Autoplay } from 'swiper/modules'; // Removed Pagination, ad
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/autoplay'; // Add autoplay CSS
-
+import SectionTitle from '../Common/SectionTitle';
 interface Tour {
   id: string;
   title: string;
@@ -109,9 +109,9 @@ export default function FeaturedDomesticTours() {
       <main className="container mt-7 mx-auto px-4">
         <Link href="/tours">
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-2">
-             Top Trending Trips in India & Beyond
-            </h1>
+            <SectionTitle title="Top Trending Trips in India & Beyond"
+          paragraph="Don't just take our word for it - hear from our globetrotters about their unforgettable journeys crafted by our expert team."
+          center></SectionTitle>
           </div>
         </Link>
 

@@ -13,21 +13,27 @@ interface DeviceInfo {
   timestamp: any;
   path: string;
   
-  // Network info (will be populated by backend)
+  // Network info
   ipAddress?: string;
   networkInfo?: {
     asn?: string;
     isp?: string;
+    proxy?: boolean;
+    hosting?: boolean;
   };
   
-  // Location info (will be populated by backend)
+  // Location info
   geoInfo?: {
     country?: string;
     countryCode?: string;
     region?: string;
+    regionName?: string;
     city?: string;
+    zip?: string;
     latitude?: number;
     longitude?: number;
+    continent?: string;
+    continentCode?: string;
   };
   
   // Device capabilities
@@ -68,14 +74,14 @@ export const trackDevice = async (path: string = "/") => {
   try {
     const deviceId = await generateDeviceId(deviceInfo);
     const sanitizedPath = sanitizeFirestorePath(path);
-    const collectionPath = `deviceInfo/${sanitizedPath}/visitors`;
+    const collectionPath = `analytics/${sanitizedPath}/visitors`;
     const docRef = doc(db, collectionPath, deviceId);
 
     // First store the client-side data immediately
     await setDoc(docRef, deviceInfo, { merge: true });
 
-    // Then try to get IP and location (via Cloudflare headers if available)
-    const ipData = await getIpData();
+    // Then try to get IP and location data
+    const ipData = await getIpAndLocationData();
     if (ipData) {
       await setDoc(docRef, ipData, { merge: true });
     }
@@ -89,8 +95,21 @@ export const trackDevice = async (path: string = "/") => {
   }
 };
 
-// This will work if you're behind Cloudflare
-async function getIpData(): Promise<Partial<DeviceInfo> | null> {
+async function getIpAndLocationData(): Promise<Partial<DeviceInfo> | null> {
+  try {
+    // First try Cloudflare headers (faster and free)
+    const cfData = await getCloudflareIpData();
+    if (cfData) return cfData;
+
+    // Fallback to IP-API if Cloudflare headers not available
+    return await getIpApiData();
+  } catch (e) {
+    console.error("Failed to get IP data:", e);
+    return null;
+  }
+}
+
+async function getCloudflareIpData(): Promise<Partial<DeviceInfo> | null> {
   try {
     const response = await fetch('https://cdn.jsdelivr.net/npm/ipdata@1.0.0/country.js', {
       method: 'HEAD',
@@ -98,7 +117,6 @@ async function getIpData(): Promise<Partial<DeviceInfo> | null> {
       cache: 'no-store'
     });
 
-    // Cloudflare adds these headers automatically
     const cfGeo = {
       country: response.headers.get('cf-ipcountry'),
       region: response.headers.get('cf-region'),
@@ -128,6 +146,43 @@ async function getIpData(): Promise<Partial<DeviceInfo> | null> {
       }
     };
   } catch (e) {
+    return null;
+  }
+}
+
+async function getIpApiData(): Promise<Partial<DeviceInfo> | null> {
+  try {
+    // Using IP-API's pro endpoint (free for limited use)
+    // Note: For production, consider using your own backend to call this API
+    // to avoid exposing your API key and to handle rate limiting
+    const response = await fetch('http://ip-api.com/json/?fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting,query');
+    const data = await response.json();
+
+    if (data.status !== 'success') return null;
+
+    return {
+      ipAddress: data.query,
+      networkInfo: {
+        asn: data.as,
+        isp: data.isp,
+        proxy: data.proxy,
+        hosting: data.hosting
+      },
+      geoInfo: {
+        continent: data.continent,
+        continentCode: data.continentCode,
+        country: data.country,
+        countryCode: data.countryCode,
+        region: data.region,
+        regionName: data.regionName,
+        city: data.city,
+        zip: data.zip,
+        latitude: data.lat,
+        longitude: data.lon
+      }
+    };
+  } catch (e) {
+    console.error("IP-API error:", e);
     return null;
   }
 }

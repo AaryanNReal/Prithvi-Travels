@@ -448,7 +448,7 @@ export default function TourDetailPage() {
             <h1 className='text-3xl font-bold text-gray-800'>{tour.title}</h1>
             <div className="flex items-center gap-4 mt-2">
               {tour.categoryDetails && (
-                <Link href={`/tours/category/${tour.categoryDetails.slug}`} className="text-blue-500 text-sm font-medium p-1 rounded-sm hover:text-blue-600 transition-colors duration-200">
+                <Link href={`/tours/${tour.categoryDetails.slug}`} className="text-blue-500 text-sm font-medium p-1 rounded-sm hover:text-blue-600 transition-colors duration-200">
                   {tour.categoryDetails.name}
                 </Link>
               )}

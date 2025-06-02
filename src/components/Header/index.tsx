@@ -88,7 +88,7 @@ const Header = () => {
       >
         <div className="container ">
           <div className="relative  flex items-center justify-between">
-            <div className="w- max-w-full px-3 xl:mr-10">
+            <div className="w- max-w-full  xl:mr-10">
               <Link
                 href="/"
                 className={`header-logo block w-full ${

@@ -3,6 +3,10 @@ import { db } from '@/app/lib/firebase';
 import TourCard from '@/components/Domestic/TourCard';
 import { Metadata } from 'next';
 
+// Disable caching for this page
+export const revalidate = 0; // This is the key change for dynamic fetching
+export const dynamic = 'force-dynamic';
+
 async function getTours() {
   try {
     const toursCollection = collection(db, 'tours');

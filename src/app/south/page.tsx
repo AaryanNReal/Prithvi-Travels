@@ -53,7 +53,7 @@ async function getDomesticTours() {
       collection(db, 'tours'),
       where('tourType', '==', 'domestic'),
       where('status', '==', 'active'),
-     
+      where('themeType', '==', 'south')
     );
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
@@ -79,7 +79,7 @@ export default async function DomesticToursPage() {
   if (error) {
     return (
       <div className="container mx-auto py-12 px-4 text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Domestic Tours</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Southern India Tours</h1>
         <p className="text-xl text-red-500 mb-6">{error}</p>
         <Link 
           href="/tours/domestic"
@@ -92,13 +92,11 @@ export default async function DomesticToursPage() {
   }
 
   return (
-    
     <div className="container mx-auto py-12 mt-20 px-4">
-      
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Domestic Tours</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Southern India</h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Explore our curated collection of domestic travel packages
+          Explore our curated collection of Southern India travel packages
         </p>
       </div>
 
@@ -150,7 +148,7 @@ export default async function DomesticToursPage() {
       ) : (
         <div className="text-center py-12">
           <h2 className="text-2xl font-medium text-gray-700">
-            No domestic tours available at the moment
+            No Southern India tours available at the moment
           </h2>
           <Link 
             href="/tours" 

@@ -785,297 +785,298 @@ export default function TourDetailPage() {
         </div>
         
         {/* Sidebar */}
-        <div className="md:w-1/3 space-y-4  ">
-          {/* Booking Form */}
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Book This Tour</h2>
-            
-            {formSubmitted ? (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                Thank you for your inquiry! We'll contact you shortly.
+        {/* Sidebar - Fixed with proper spacing */}
+<div className="md:w-1/3">
+  <div className="space-y-6 sticky top-24">
+    {/* Booking Form */}
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Book This Tour</h2>
+      
+      {formSubmitted ? (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
+          Thank you for your inquiry! We'll contact you shortly.
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {user ? (
+            <>
+              <div className="flex items-center space-x-4 bg-blue-50 p-4 rounded-lg">
+                <div className="bg-blue-100 p-3 rounded-full">
+                  <UserIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800">{userData?.name || user.displayName || 'User'}</p>
+                  <p className="text-sm text-gray-600">{userData?.email || user.email}</p>
+                  {userData?.phone && <p className="text-sm text-gray-600">{userData.phone}</p>}
+                </div>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {user ? (
-                  <>
-                    <div className="flex items-center space-x-4 bg-blue-50 p-4 rounded-lg">
-                      <div className="bg-blue-100 p-3 rounded-full">
-                        <UserIcon className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">{userData?.name || user.displayName || 'User'}</p>
-                        <p className="text-sm text-gray-600">{userData?.email || user.email}</p>
-                        {userData?.phone && <p className="text-sm text-gray-600">{userData.phone}</p>}
-                      </div>
+              
+              {!userData?.phone && (
+                <div className=''>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <PhoneIcon className="h-5 w-5 text-gray-400" />
                     </div>
-                    
-                    {!userData?.phone && (
-                      <div className=''>
-                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                          Phone Number <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <PhoneIcon className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <MobileNumberInput 
-                            value={formData.phone}
-                            onChange={handlePhoneChange}
-                            required
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                        Name <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <UserIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="text"
-                          id="name"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          required
-                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                          placeholder="Your name"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                        Email <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <EnvelopeIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="email"
-                          id="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          required
-                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                          placeholder="Your email"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone Number <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <PhoneIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <MobileNumberInput 
-                          value={formData.phone}
-                          onChange={handlePhoneChange}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                {/* Traveler Information Section */}
-                <div className="space-y-4 pt-4 border-t border-gray-200">
-                  <h3 className="font-medium text-gray-800">Traveler Information</h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="numberofAdults" className="block text-sm font-medium text-gray-700 mb-1">
-                       Adults (⫺ 12)
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <UserIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="number"
-                          id="numberofAdults"
-                          name="numberofAdults"
-                          min="1"
-                          value={formData.numberofAdults}
-                          onChange={handleNumberChange}
-                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="numberofChildren" className="block text-sm font-medium text-gray-700 mb-1">
-                        Children (⫺ 2 & ⧀ 12)
-                      </label>
-                      <div className="relative">
-                       
-                        <input
-                          type="number"
-                          id="numberofChildren"
-                          name="numberofChildren"
-                          min="0"
-                          value={formData.numberofChildren}
-                          onChange={handleNumberChange}
-                          className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="numberofInfants" className="block text-sm font-medium text-gray-700 mb-1">
-                         Infants (⧀ 2)
-                      </label>
-                      <div className="relative">
-                        
-                        <input
-                          type="number"
-                          id="numberofInfants"
-                          name="numberofInfants"
-                          min="0"
-                          value={formData.numberofInfants}
-                          onChange={handleNumberChange}
-                          className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="numberofTravellers" className="block text-sm font-medium text-gray-700 mb-1">
-                        Total Travelers
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <UsersIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="number"
-                          id="numberofTravellers"
-                          name="numberofTravellers"
-                          value={formData.numberofTravellers}
-                          readOnly
-                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border bg-gray-100"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-span-2">
-                    <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
-                      Preferred Travel Date
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <CalendarIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="date"
-                        id="preferredDate"
-                        name="preferredDate"
-                        value={formData.preferredDate}
-                        onChange={handleInputChange}
-                        className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="customRequirement" className="block text-sm font-medium text-gray-700 mb-1">
-                      Special Requirements
-                    </label>
-                    <textarea
-                      id="customRequirement"
-                      name="customRequirement"
-                      rows={3}
-                      value={formData.customRequirement}
-                      onChange={handleInputChange}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 py-2 border"
-                      placeholder="Any special requests"
+                    <MobileNumberInput 
+                      value={formData.phone}
+                      onChange={handlePhoneChange}
+                      required
                     />
                   </div>
                 </div>
-
-                <div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out ${
-                      isSubmitting 
-                        ? 'bg-gray-400 cursor-not-allowed text-gray-600' 
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
-                  >
-                    {isSubmitting 
-                      ? (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Submitting...
-                        </div>
-                      )
-                      : (user ? 'Request a Call Back' : 'Submit Inquiry')
-                    }
-                  </button>
+              )}
+            </>
+          ) : (
+            <>
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                    placeholder="Your name"
+                  />
                 </div>
-                
-                {!user && (
-                  <p className="text-sm text-gray-500">
-                    Already have an account?{' '}
-                    <Link href="/signin" className="text-blue-600 hover:text-blue-800">
-                      Log in
-                    </Link>
-                  </p>
-                )}
-              </form>
-            )}
-          </div>
-        
-          {/* Related Tours */}
-          {relatedTours.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Related Tours</h3>
-              <div className="space-y-4">
-                {relatedTours.map((tour) => (
-                  <Link 
-                    key={tour.id} 
-                    href={`/tours/${tour.slug}`}
-                    className="flex items-start space-x-4 group"
-                  >
-                    <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
-                      <Image
-                        src={tour.imageURL}
-                        alt={tour.title}
-                        fill
-                        className="object-cover group-hover:opacity-90 transition-opacity"
-                      />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
-                        {tour.title}
-                      </h4>
-                      <div className="flex items-center mt-1">
-                        <span className="text-sm text-blue-600 font-medium">{formatPrice(tour.price)}</span>
-                        <span className="text-xs ml-2 px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">
-                          {tour.tourType === 'international' ? 'International' : 'Domestic'}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                    placeholder="Your email"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <PhoneIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <MobileNumberInput 
+                    value={formData.phone}
+                    onChange={handlePhoneChange}
+                    required
+                  />
+                </div>
+              </div>
+            </>
+          )}
+          
+          {/* Traveler Information Section */}
+          <div className="space-y-4 pt-4 border-t border-gray-200">
+            <h3 className="font-medium text-gray-800">Traveler Information</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="numberofAdults" className="block text-sm font-medium text-gray-700 mb-1">
+                 Adults (⫺ 12)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    id="numberofAdults"
+                    name="numberofAdults"
+                    min="1"
+                    value={formData.numberofAdults}
+                    onChange={handleNumberChange}
+                    className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="numberofChildren" className="block text-sm font-medium text-gray-700 mb-1">
+                  Children (⫺ 2 & ⧀ 12)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    id="numberofChildren"
+                    name="numberofChildren"
+                    min="0"
+                    value={formData.numberofChildren}
+                    onChange={handleNumberChange}
+                    className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="numberofInfants" className="block text-sm font-medium text-gray-700 mb-1">
+                   Infants (⧀ 2)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    id="numberofInfants"
+                    name="numberofInfants"
+                    min="0"
+                    value={formData.numberofInfants}
+                    onChange={handleNumberChange}
+                    className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="numberofTravellers" className="block text-sm font-medium text-gray-700 mb-1">
+                  Total Travelers
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UsersIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    id="numberofTravellers"
+                    name="numberofTravellers"
+                    value={formData.numberofTravellers}
+                    readOnly
+                    className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border bg-gray-100"
+                  />
+                </div>
               </div>
             </div>
+
+            <div className="col-span-2">
+              <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
+                Preferred Travel Date
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <CalendarIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="date"
+                  id="preferredDate"
+                  name="preferredDate"
+                  value={formData.preferredDate}
+                  onChange={handleInputChange}
+                  className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="customRequirement" className="block text-sm font-medium text-gray-700 mb-1">
+                Special Requirements
+              </label>
+              <textarea
+                id="customRequirement"
+                name="customRequirement"
+                rows={3}
+                value={formData.customRequirement}
+                onChange={handleInputChange}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 py-2 border"
+                placeholder="Any special requests"
+              />
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out ${
+                isSubmitting 
+                  ? 'bg-gray-400 cursor-not-allowed text-gray-600' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
+            >
+              {isSubmitting 
+                ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Submitting...
+                  </div>
+                )
+                : (user ? 'Request a Call Back' : 'Submit Inquiry')
+              }
+            </button>
+          </div>
+          
+          {!user && (
+            <p className="text-sm text-gray-500">
+              Already have an account?{' '}
+              <Link href="/signin" className="text-blue-600 hover:text-blue-800">
+                Log in
+              </Link>
+            </p>
           )}
+        </form>
+      )}
+    </div>
+  
+    {/* Related Tours */}
+    {relatedTours.length > 0 && (
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Related Tours</h3>
+        <div className="space-y-4">
+          {relatedTours.map((tour) => (
+            <Link 
+              key={tour.id} 
+              href={`/tours/${tour.slug}`}
+              className="flex items-start space-x-4 group"
+            >
+              <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
+                <Image
+                  src={tour.imageURL}
+                  alt={tour.title}
+                  fill
+                  className="object-cover group-hover:opacity-90 transition-opacity"
+                />
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
+                  {tour.title}
+                </h4>
+                <div className="flex items-center mt-1">
+                  <span className="text-sm text-blue-600 font-medium">{formatPrice(tour.price)}</span>
+                  <span className="text-xs ml-2 px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">
+                    {tour.tourType === 'international' ? 'International' : 'Domestic'}
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
+      </div>
+    )}
+  </div>
+</div>
       </div>
     </>
   );

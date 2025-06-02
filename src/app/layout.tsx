@@ -6,6 +6,7 @@ import "../styles/index.css";
 import { Metadata } from "next";
 import { Providers } from "./providers";
 import TrackingWrapper from "@/components/TrackingWrapper";
+import AnimatedBackground from "@/components/Common/AnimatedBackground";
 const inter = Inter({ subsets: ["latin"] });
 
 const HIDE_HEADER_FOOTER_ROUTES = [
@@ -63,7 +64,9 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning lang="en">
       <head />
+      
       <body className={`bg-[#FCFCFC] ${inter.className}`}>
+        <AnimatedBackground/>
         <Providers>
          
           {/* Header and Footer visibility would need to be handled in their own components */}

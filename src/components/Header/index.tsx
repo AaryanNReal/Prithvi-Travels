@@ -111,7 +111,7 @@ const Header = () => {
                 />
               </Link>
             </div>
-            <div className="flex w-full items-center justify-between px-1">
+            <div className="flex w-full font-semibold items-center justify-between px-1">
               <div>
                 <button
                   onClick={toggleNavbar}
@@ -150,7 +150,7 @@ const Header = () => {
                           menuItem.isbutton ? (
                             <button
                               onClick={() => handleMenuItemClick(menuItem)}
-                              className="flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
+                              className="flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6  text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
                             >
                               {menuItem.title}
                             </button>

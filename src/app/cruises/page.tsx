@@ -4,6 +4,7 @@ import { db } from '@/app/lib/firebase';
 import CruiseCard from '@/components/Cruises/cruise_card';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import AnimatedBackground from '@/components/Common/AnimatedBackground';
 interface CruiseCardData {
   id: string;
   title: string;
@@ -104,7 +105,8 @@ export default async function CruisesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 mt-20 px-4 sm:px-6 lg:px-8">
+    
+    <div className="min-h-screen  dark:bg-gray-900 py-12 mt-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">

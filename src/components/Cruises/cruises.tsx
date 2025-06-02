@@ -107,9 +107,12 @@ export default function FeaturedCruises() {
       <main className="container mx-auto px-4 border-b py-5">
         <Link href="/cruises">
           <div className="text-center mb-12">
-            <SectionTitle title='Editor’s Choice: Cruise Getaway'
+            <SectionTitle  title='Editor’s Choice: Cruise Getaway'
              paragraph="Don't just take our word for it - hear from our globetrotters about their unforgettable journeys crafted by our expert team."
-          center></SectionTitle>
+          center
+          width=''>
+
+          </SectionTitle>
           </div>
         </Link>
 

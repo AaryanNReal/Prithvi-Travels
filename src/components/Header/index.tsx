@@ -88,7 +88,7 @@ const Header = () => {
       >
         <div className="container ">
           <div className="relative  flex items-center justify-between">
-            <div className="w- max-w-full  xl:mr-10">
+            <div className="w- max-w-full  xl:mr-7 ">
               <Link
                 href="/"
                 className={`header-logo block w-full ${
@@ -111,7 +111,7 @@ const Header = () => {
                 />
               </Link>
             </div>
-            <div className="flex w-full font-semibold items-center justify-between px-1">
+            <div className="flex w-full font-semibold items-center justify-between ">
               <div>
                 <button
                   onClick={toggleNavbar}

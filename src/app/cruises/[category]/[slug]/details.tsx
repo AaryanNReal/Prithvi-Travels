@@ -379,281 +379,265 @@ export default function CruiseDetailPage() {
         </div>
 
         {/* Booking Form Sidebar */}
-        <div className="md:w-1/3 space-y-6 mt-16">
-          <div className="mt-12 bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Booking Inquiry</h2>
-            {formSubmitted ? (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                Thank you for your inquiry! We'll contact you shortly.
+        {/* Compact Booking Form Sidebar */}
+<div className="md:w-1/3 space-y-6 sticky top-24">
+  <div className="bg-white rounded-lg shadow-md p-4">
+    <h2 className="text-xl font-bold text-gray-800 mb-4">Booking Inquiry</h2>
+    {formSubmitted ? (
+      <div className="bg-green-100 border border-green-400 text-green-700 px-3 py-2 rounded text-sm">
+        Thank you! We'll contact you shortly.
+      </div>
+    ) : (
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {loadingUser ? (
+          <div className="flex justify-center py-2">
+            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : user ? (
+          <>
+            <div className="flex items-center space-x-3 bg-blue-50 p-3 rounded">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <UserIcon className="h-5 w-5 text-blue-600" />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {loadingUser ? (
-                  <div className="flex justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              <div className="truncate">
+                <p className="font-medium text-gray-800 text-sm truncate">
+                  {userData?.name || user.displayName || 'User'}
+                </p>
+                <p className="text-xs text-gray-600 truncate">
+                  {userData?.email || user.email}
+                </p>
+                 <p className="text-xs text-gray-600 truncate">
+                  {userData?.phone || user.phoneNumber}
+                </p>
+              </div>
+            </div>
+            
+            {!userData?.phone && (
+              <div>
+                <label htmlFor="phone" className="block text-xs font-medium text-gray-700 mb-1">
+                  Phone <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                    <PhoneIcon className="h-4 w-4 text-gray-400" />
                   </div>
-                ) : user ? (
-                  <>
-                    <div className="flex items-center space-x-4 bg-blue-50 p-4 rounded-lg">
-                      <div className="bg-blue-100 p-3 rounded-full">
-                        <UserIcon className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800">{userData?.name || user.displayName || 'User'}</p>
-                        <p className="text-sm text-gray-600">{userData?.email || user.email}</p>
-                        {userData?.phone && <p className="text-sm text-gray-600">{userData.phone}</p>}
-                      </div>
-                    </div>
-                    
-                    {!userData?.phone && (
-                      <div>
-                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                          Phone Number <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <PhoneIcon className="h-5 w-5 text-gray-400" />
-                          </div>
-                          <MobileNumberInput 
-                            value={formData.phone}
-                            onChange={handlePhoneChange}
-                            required
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                        Name <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <UserIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="text"
-                          id="name"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          required
-                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                          placeholder="Your name"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                        Email <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <EnvelopeIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="email"
-                          id="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          required
-                          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                          placeholder="Your email"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone Number <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <PhoneIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <MobileNumberInput 
-                          value={formData.phone}
-                          onChange={handlePhoneChange}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Traveler Details Section */}
- <div className="space-y-4 pt-4 border-t border-gray-200">
-  <h3 className="font-medium text-gray-800">Traveler Information</h3>
-  
-  <div className="grid grid-cols-2 gap-4">
-    <div>
-      <label htmlFor="numberofAdults" className="block text-sm font-medium text-gray-700 mb-1">
-        Adults 
-      </label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <UserIcon className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          type="number"
-          id="numberofAdults"
-          name="numberofAdults"
-          min="1"
-          value={formData.numberofAdults}
-          onChange={(e) => {
-            const adults = parseInt(e.target.value) || 0;
-            setFormData(prev => ({
-              ...prev,
-              numberofAdults: adults,
-              numberofTravellers: adults + prev.numberofChildren + prev.numberofInfants
-            }));
-          }}
-          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-          required
-        />
-      </div>
-    </div>
-
-    <div>
-      <label htmlFor="numberofChildren" className="block text-sm font-medium text-gray-700 mb-1">
-        Children 
-      </label>
-      <div className="relative">
-        
-        <input
-          type="number"
-          id="numberofChildren"
-          name="numberofChildren"
-          min="0"
-          value={formData.numberofChildren}
-          onChange={(e) => {
-            const children = parseInt(e.target.value) || 0;
-            setFormData(prev => ({
-              ...prev,
-              numberofChildren: children,
-              numberofTravellers: prev.numberofAdults + children + prev.numberofInfants
-            }));
-          }}
-          className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-        />
-      </div>
-    </div>
-
-    <div>
-      <label htmlFor="numberofInfants" className="block text-sm font-medium text-gray-700 mb-1">
-        Infants 
-      </label>
-      <div className="relative">
-       
-        <input
-          type="number"
-          id="numberofInfants"
-          name="numberofInfants"
-          min="0"
-          value={formData.numberofInfants}
-          onChange={(e) => {
-            const infants = parseInt(e.target.value) || 0;
-            setFormData(prev => ({
-              ...prev,
-              numberofInfants: infants,
-              numberofTravellers: prev.numberofAdults + prev.numberofChildren + infants
-            }));
-          }}
-          className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-        />
-      </div>
-    </div>
-
-    <div>
-      <label htmlFor="numberofTravellers" className="block text-sm font-medium text-gray-700 mb-1">
-        Total Travelers
-      </label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <UsersIcon className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          type="number"
-          id="numberofTravellers"
-          name="numberofTravellers"
-          value={formData.numberofAdults + formData.numberofChildren + formData.numberofInfants}
-          readOnly
-          className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border bg-gray-100"
-        />
-      </div>
-    </div>
-  </div>
-
-  <div className="col-span-2">
-    <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
-      Preferred Travel Date
-    </label>
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <CalendarIcon className="h-5 w-5 text-gray-400" />
-      </div>
-      <input
-        type="date"
-        id="preferredDate"
-        name="preferredDate"
-        value={formData.preferredDate}
-        onChange={handleInputChange}
-        className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-      />
-    </div>
-  </div>
-
-  <div>
-    <label htmlFor="customRequirement" className="block text-sm font-medium text-gray-700 mb-1">
-      Special Requirements
-    </label>
-    <textarea
-      id="customRequirement"
-      name="customRequirement"
-      rows={3}
-      value={formData.customRequirement}
-      onChange={handleInputChange}
-      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 py-2 border"
-      placeholder="Any special requests"
-    />
-  </div>
-</div> 
-
-                <div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out ${
-                      isSubmitting 
-                        ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                        Processing...
-                      </div>
-                    ) : (
-                      user ? 'Submit Booking Inquiry' : 'Submit Inquiry'
-                    )}
-                  </button>
+                  <MobileNumberInput 
+                    value={formData.phone}
+                    onChange={handlePhoneChange}
+                    required
+                   
+                  />
                 </div>
-
-                {!user && (
-                  <p className="text-sm text-gray-500">
-                    Already have an account?{' '}
-                    <Link href="/signin" className="text-blue-600 hover:text-blue-800">
-                      Log in
-                    </Link>
-                  </p>
-                )}
-              </form>
+              </div>
             )}
+          </>
+        ) : (
+          <>
+            <div>
+              <label htmlFor="name" className="block text-xs font-medium text-gray-700 mb-1">
+                Name <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                  <UserIcon className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  className="pl-8 text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border"
+                  placeholder="Your name"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                  <EnvelopeIcon className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  className="pl-8 text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border"
+                  placeholder="Your email"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="phone" className="block text-xs font-medium text-gray-700 mb-1">
+                Phone <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                  <PhoneIcon className="h-4 w-4 text-gray-400" />
+                </div>
+                <MobileNumberInput 
+                  value={formData.phone}
+                  onChange={handlePhoneChange}
+                  required
+         
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Compact Traveler Information */}
+        <div className="space-y-2 pt-2 border-t border-gray-200">
+          <h3 className="font-medium text-gray-800 text-sm">Travelers</h3>
+          
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label htmlFor="numberofAdults" className="block text-xs font-medium text-gray-700 mb-1">
+                Adults
+              </label>
+              <input
+                type="number"
+                id="numberofAdults"
+                name="numberofAdults"
+                min="1"
+                value={formData.numberofAdults}
+                onChange={(e) => {
+                  const adults = parseInt(e.target.value) || 0;
+                  setFormData(prev => ({
+                    ...prev,
+                    numberofAdults: adults,
+                    numberofTravellers: adults + prev.numberofChildren + prev.numberofInfants
+                  }));
+                }}
+                className="text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border px-2"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="numberofChildren" className="block text-xs font-medium text-gray-700 mb-1">
+                Children
+              </label>
+              <input
+                type="number"
+                id="numberofChildren"
+                name="numberofChildren"
+                min="0"
+                value={formData.numberofChildren}
+                onChange={(e) => {
+                  const children = parseInt(e.target.value) || 0;
+                  setFormData(prev => ({
+                    ...prev,
+                    numberofChildren: children,
+                    numberofTravellers: prev.numberofAdults + children + prev.numberofInfants
+                  }));
+                }}
+                className="text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border px-2"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="numberofInfants" className="block text-xs font-medium text-gray-700 mb-1">
+                Infants
+              </label>
+              <input
+                type="number"
+                id="numberofInfants"
+                name="numberofInfants"
+                min="0"
+                value={formData.numberofInfants}
+                onChange={(e) => {
+                  const infants = parseInt(e.target.value) || 0;
+                  setFormData(prev => ({
+                    ...prev,
+                    numberofInfants: infants,
+                    numberofTravellers: prev.numberofAdults + prev.numberofChildren + infants
+                  }));
+                }}
+                className="text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border px-2"
+              />
+            </div>
+          </div>
+
+          <div className="pt-1">
+            <div className="flex items-center text-xs text-gray-500">
+              <UsersIcon className="h-3.5 w-3.5 mr-1" />
+              Total Travelers: {formData.numberofTravellers}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="preferredDate" className="block text-xs font-medium text-gray-700 mb-1">
+              Travel Date
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                <CalendarIcon className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="date"
+                id="preferredDate"
+                name="preferredDate"
+                value={formData.preferredDate}
+                onChange={handleInputChange}
+                className="pl-8 text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border"
+              />
+            </div>
           </div>
         </div>
+
+        <div>
+          <label htmlFor="customRequirement" className="block text-xs font-medium text-gray-700 mb-1">
+            Special Requirements
+          </label>
+          <textarea
+            id="customRequirement"
+            name="customRequirement"
+            rows={2}
+            value={formData.customRequirement}
+            onChange={handleInputChange}
+            className="text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1.5 border"
+            placeholder="Any special requests"
+          />
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`w-full text-sm font-medium py-1.5 px-4 rounded transition duration-150 ease-in-out ${
+              isSubmitting 
+                ? 'bg-gray-400 cursor-not-allowed text-gray-600' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
+          >
+            {isSubmitting 
+              ? 'Processing...'
+              : (user ? 'Submit Inquiry' : 'Submit Inquiry')
+            }
+          </button>
+        </div>
+
+        {!user && (
+          <p className="text-xs text-gray-500 mt-1">
+            Have an account?{' '}
+            <Link href="/signin" className="text-blue-600 hover:text-blue-800">
+              Log in
+            </Link>
+          </p>
+        )}
+      </form>
+    )}
+  </div>
+</div>
       </div>
     </>
   );

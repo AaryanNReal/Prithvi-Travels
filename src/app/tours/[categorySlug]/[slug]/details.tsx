@@ -784,46 +784,46 @@ export default function TourDetailPage() {
           )}
         </div>
         
-        {/* Sidebar */}
-        {/* Sidebar - Fixed with proper spacing */}
+   {/* Sidebar - Compact Booking Form */}
 <div className="md:w-1/3">
   <div className="space-y-6 sticky top-24">
-    {/* Booking Form */}
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Book This Tour</h2>
+    {/* Compact Booking Form */}
+    <div className="bg-white rounded-lg shadow-md p-4">
+      <h2 className="text-xl font-bold text-gray-800 mb-4">Book This Tour</h2>
       
       {formSubmitted ? (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-          Thank you for your inquiry! We'll contact you shortly.
+        <div className="bg-green-100 border border-green-400 text-green-700 px-3 py-2 rounded text-sm">
+          Thank you! We'll contact you shortly.
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {user ? (
             <>
-              <div className="flex items-center space-x-4 bg-blue-50 p-4 rounded-lg">
-                <div className="bg-blue-100 p-3 rounded-full">
-                  <UserIcon className="h-6 w-6 text-blue-600" />
+              <div className="flex items-center space-x-3 bg-blue-50 p-3 rounded">
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <UserIcon className="h-5 w-5 text-blue-600" />
                 </div>
-                <div>
-                  <p className="font-medium text-gray-800">{userData?.name || user.displayName || 'User'}</p>
-                  <p className="text-sm text-gray-600">{userData?.email || user.email}</p>
-                  {userData?.phone && <p className="text-sm text-gray-600">{userData.phone}</p>}
+                <div className="truncate">
+                  <p className="font-medium text-gray-800 text-sm truncate">{userData?.name || user.displayName || 'User'}</p>
+                  <p className="text-xs text-gray-600 truncate">{userData?.email || user.email}</p>
+                  <p className="text-xs text-gray-600 truncate">{userData?.phone || user.email}</p>
                 </div>
               </div>
               
               {!userData?.phone && (
-                <div className=''>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number <span className="text-red-500">*</span>
+                <div>
+                  <label htmlFor="phone" className="block text-xs font-medium text-gray-700 mb-1">
+                    Phone <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <PhoneIcon className="h-5 w-5 text-gray-400" />
+                    <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                      <PhoneIcon className="h-4 w-4 text-gray-400" />
                     </div>
                     <MobileNumberInput 
                       value={formData.phone}
                       onChange={handlePhoneChange}
                       required
+                      
                     />
                   </div>
                 </div>
@@ -832,12 +832,12 @@ export default function TourDetailPage() {
           ) : (
             <>
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-xs font-medium text-gray-700 mb-1">
                   Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <UserIcon className="h-5 w-5 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                    <UserIcon className="h-4 w-4 text-gray-400" />
                   </div>
                   <input
                     type="text"
@@ -846,19 +846,19 @@ export default function TourDetailPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                    className="pl-8 text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border"
                     placeholder="Your name"
                   />
                 </div>
               </div>
               
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">
                   Email <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                    <EnvelopeIcon className="h-4 w-4 text-gray-400" />
                   </div>
                   <input
                     type="email"
@@ -867,117 +867,97 @@ export default function TourDetailPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                    className="pl-8 text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border"
                     placeholder="Your email"
                   />
                 </div>
               </div>
               
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number <span className="text-red-500">*</span>
+                <label htmlFor="phone" className="block text-xs font-medium text-gray-700 mb-1">
+                  Phone <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <PhoneIcon className="h-5 w-5 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                    <PhoneIcon className="h-4 w-4 text-gray-400" />
                   </div>
                   <MobileNumberInput 
                     value={formData.phone}
                     onChange={handlePhoneChange}
                     required
+                   
                   />
                 </div>
               </div>
             </>
           )}
           
-          {/* Traveler Information Section */}
-          <div className="space-y-4 pt-4 border-t border-gray-200">
-            <h3 className="font-medium text-gray-800">Traveler Information</h3>
+          {/* Compact Traveler Information with Infant Field */}
+          <div className="space-y-2 pt-2 border-t border-gray-200">
+            <h3 className="font-medium text-gray-800 text-sm">Travelers</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-2">
               <div>
-                <label htmlFor="numberofAdults" className="block text-sm font-medium text-gray-700 mb-1">
-                 Adults 
+                <label htmlFor="numberofAdults" className="block text-xs font-medium text-gray-700 mb-1">
+                  Adults
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <UserIcon className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="number"
-                    id="numberofAdults"
-                    name="numberofAdults"
-                    min="1"
-                    value={formData.numberofAdults}
-                    onChange={handleNumberChange}
-                    className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                    required
-                  />
-                </div>
+                <input
+                  type="number"
+                  id="numberofAdults"
+                  name="numberofAdults"
+                  min="1"
+                  value={formData.numberofAdults}
+                  onChange={handleNumberChange}
+                  className="text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border px-2"
+                  required
+                />
               </div>
 
               <div>
-                <label htmlFor="numberofChildren" className="block text-sm font-medium text-gray-700 mb-1">
-                  Children 
+                <label htmlFor="numberofChildren" className="block text-xs font-medium text-gray-700 mb-1">
+                  Children
                 </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    id="numberofChildren"
-                    name="numberofChildren"
-                    min="0"
-                    value={formData.numberofChildren}
-                    onChange={handleNumberChange}
-                    className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                  />
-                </div>
+                <input
+                  type="number"
+                  id="numberofChildren"
+                  name="numberofChildren"
+                  min="0"
+                  value={formData.numberofChildren}
+                  onChange={handleNumberChange}
+                  className="text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border px-2"
+                />
               </div>
 
               <div>
-                <label htmlFor="numberofInfants" className="block text-sm font-medium text-gray-700 mb-1">
-                   Infants 
+                <label htmlFor="numberofInfants" className="block text-xs font-medium text-gray-700 mb-1">
+                  Infants
                 </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    id="numberofInfants"
-                    name="numberofInfants"
-                    min="0"
-                    value={formData.numberofInfants}
-                    onChange={handleNumberChange}
-                    className="pl-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="numberofTravellers" className="block text-sm font-medium text-gray-700 mb-1">
-                  Total Travelers
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <UsersIcon className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="number"
-                    id="numberofTravellers"
-                    name="numberofTravellers"
-                    value={formData.numberofTravellers}
-                    readOnly
-                    className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border bg-gray-100"
-                  />
-                </div>
+                <input
+                  type="number"
+                  id="numberofInfants"
+                  name="numberofInfants"
+                  min="0"
+                  value={formData.numberofInfants}
+                  onChange={handleNumberChange}
+                  className="text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border px-2"
+                />
               </div>
             </div>
 
-            <div className="col-span-2">
-              <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
-                Preferred Travel Date
+            <div className="pt-1">
+              <div className="flex items-center text-xs text-gray-500">
+                <UsersIcon className="h-3.5 w-3.5 mr-1" />
+                Total Travelers: {formData.numberofTravellers}
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="preferredDate" className="block text-xs font-medium text-gray-700 mb-1">
+                Travel Date
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <CalendarIcon className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                  <CalendarIcon className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="date"
@@ -985,23 +965,24 @@ export default function TourDetailPage() {
                   name="preferredDate"
                   value={formData.preferredDate}
                   onChange={handleInputChange}
-                  className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 border"
+                  className="pl-8 text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 border"
                 />
               </div>
             </div>
 
+            {/* Special Requirements - Compact Version */}
             <div>
-              <label htmlFor="customRequirement" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="customRequirement" className="block text-xs font-medium text-gray-700 mb-1">
                 Special Requirements
               </label>
               <textarea
                 id="customRequirement"
                 name="customRequirement"
-                rows={3}
+                rows={2}
                 value={formData.customRequirement}
                 onChange={handleInputChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 py-2 border"
-                placeholder="Any special requests"
+                className="text-sm block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 px-2 border"
+                placeholder="Dietary needs, accessibility, etc."
               />
             </div>
           </div>
@@ -1010,27 +991,22 @@ export default function TourDetailPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out ${
+              className={`w-full text-sm font-medium py-1.5 px-4 rounded transition duration-150 ease-in-out ${
                 isSubmitting 
                   ? 'bg-gray-400 cursor-not-allowed text-gray-600' 
                   : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
             >
               {isSubmitting 
-                ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Submitting...
-                  </div>
-                )
-                : (user ? 'Request a Call Back' : 'Submit Inquiry')
+                ? 'Processing...'
+                : (user ? 'Request Callback' : 'Submit Inquiry')
               }
             </button>
           </div>
           
           {!user && (
-            <p className="text-sm text-gray-500">
-              Already have an account?{' '}
+            <p className="text-xs text-gray-500 mt-1">
+              Have an account?{' '}
               <Link href="/signin" className="text-blue-600 hover:text-blue-800">
                 Log in
               </Link>
@@ -1040,18 +1016,18 @@ export default function TourDetailPage() {
       )}
     </div>
   
-    {/* Related Tours */}
+    {/* Related Tours - Compact View */}
     {relatedTours.length > 0 && (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Related Tours</h3>
-        <div className="space-y-4">
-          {relatedTours.map((tour) => (
+      <div className="bg-white rounded-lg shadow-md p-4">
+        <h3 className="text-lg font-bold text-gray-800 mb-3">Related Tours</h3>
+        <div className="space-y-3">
+          {relatedTours.slice(0, 3).map((tour) => (
             <Link 
               key={tour.id} 
               href={`/tours/${tour.slug}`}
-              className="flex items-start space-x-4 group"
+              className="flex items-start space-x-3 group"
             >
-              <div className="relative h-16 w-16 flex-shrink-0 rounded-md overflow-hidden">
+              <div className="relative h-12 w-12 flex-shrink-0 rounded overflow-hidden">
                 <Image
                   src={tour.imageURL}
                   alt={tour.title}
@@ -1059,15 +1035,12 @@ export default function TourDetailPage() {
                   className="object-cover group-hover:opacity-90 transition-opacity"
                 />
               </div>
-              <div>
-                <h4 className="font-medium text-gray-800 group-hover:text-blue-600 transition-colors">
+              <div className="min-w-0">
+                <h4 className="text-sm font-medium text-gray-800 group-hover:text-blue-600 transition-colors truncate">
                   {tour.title}
                 </h4>
-                <div className="flex items-center mt-1">
-                  <span className="text-sm text-blue-600 font-medium">{formatPrice(tour.price)}</span>
-                  <span className="text-xs ml-2 px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">
-                    {tour.tourType === 'international' ? 'International' : 'Domestic'}
-                  </span>
+                <div className="flex items-center mt-0.5">
+                  <span className="text-xs text-blue-600 font-medium">{formatPrice(tour.price)}</span>
                 </div>
               </div>
             </Link>

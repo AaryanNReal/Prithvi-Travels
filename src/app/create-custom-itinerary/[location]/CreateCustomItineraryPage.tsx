@@ -472,7 +472,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="numberofAdults" className="block text-sm font-medium text-gray-700 mb-1">
-                      Adults (12+)
+                      Adults 
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -493,7 +493,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                   <div>
                     <label htmlFor="numberofChildren" className="block text-sm font-medium text-gray-700 mb-1">
-                      Children (2-12)
+                      Children 
                     </label>
                     <div className="relative">
                       <input
@@ -510,7 +510,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
                   <div>
                     <label htmlFor="numberofInfants" className="block text-sm font-medium text-gray-700 mb-1">
-                      Infants (&lt;2)
+                      Infants 
                     </label>
                     <div className="relative">
                       <input

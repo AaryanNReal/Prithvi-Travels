@@ -9,7 +9,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
-
+import SectionTitle from '../Common/SectionTitle';
 interface Author {
   name: string;
   slug: string;
@@ -120,12 +120,9 @@ export default function FeaturedPosts() {
       <main className="container mx-auto border-t px-4 py-8 mt-5">
         <Link href="/blog">
           <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-gray-800 dark:text-white mb-2">
-              Featured Travel Stories
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Discover our handpicked selection of featured travel stories and articles.
-            </p>
+           <SectionTitle 
+           title='Featured Travel Stories'
+           paragraph='Discover our handpicked selection of featured travel stories and articles' center></SectionTitle>
           </div>
         </Link>
 

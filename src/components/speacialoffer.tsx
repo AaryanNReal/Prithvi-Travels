@@ -107,7 +107,7 @@ export default function SpecialOffersTours() {
       </Head>
 
       <main className="container p-4 border-b mx-auto  px-4">
-        <Link href="/tours">
+        <Link href="/grab-the-offer">
           <div className="text-center mb-8">
             <SectionTitle title="Grab the Offer While It Lasts!"
           paragraph="Don't just take our word for it - hear from our globetrotters about their unforgettable journeys crafted by our expert team."

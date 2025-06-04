@@ -124,18 +124,12 @@ export default function VisaExpertPage() {
 
   return (
     <div className="max-w-7xl mt-24 mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <Link 
-          href="/blog" 
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          <ChevronLeftIcon className="h-5 w-5 mr-1" />
-          Back to all categories
-        </Link>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-4">
+      <div className="mb-8 ">
+        
+        <h1 className="text-3xl font-bold items-center justify-center flex  text-gray-900 dark:text-white mt-4">
           Visa Expert Articles
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-gray-600 items-center justify-center flex dark:text-gray-400 mt-2">
           Professional advice and latest updates on visa requirements and processes
         </p>
         {error && !indexError && (

@@ -1,4 +1,3 @@
-// app/tours/tags/[tagSlug]/page.tsx
 "use client";
 
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -7,7 +6,7 @@ import TourCard from "@/components/Domestic/TourCard";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 interface Tour {
   id: string;
@@ -40,9 +39,11 @@ interface Tour {
 export default function TagToursPage() {
   const { tagSlug } = useParams<{ tagSlug: string }>();
   const [tours, setTours] = useState<Tour[]>([]);
+  const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tagName, setTagName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchToursByTag = async () => {
@@ -72,6 +73,7 @@ export default function TagToursPage() {
         }
 
         setTours(filteredTours);
+        setFilteredTours(filteredTours);
         setError(null);
       } catch (err) {
         console.error("Error fetching tours by tag:", err);
@@ -83,6 +85,20 @@ export default function TagToursPage() {
 
     fetchToursByTag();
   }, [tagSlug]);
+
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredTours(tours);
+    } else {
+      const filtered = tours.filter((tour) =>
+        tour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tour.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tour.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tour.tourType.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredTours(filtered);
+    }
+  }, [searchTerm, tours]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 mt-12 px-4 sm:px-6 lg:px-8">
@@ -98,16 +114,33 @@ export default function TagToursPage() {
           </Link>
         </div>
 
-        {/* Page Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            {tagName || "Tagged"} Tours
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            {tagName 
-              ? `Tours tagged with "${tagName}"`
-              : "Filtered tour packages"}
-          </p>
+        {/* Page Header with Search */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              {tagName || "Tagged"} Tours
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              {tagName 
+                ? `Tours tagged with "${tagName}"`
+                : "Filtered tour packages"}
+            </p>
+          </div>
+          
+          <div className="w-full md:w-auto">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search tours..."
+                className="block w-full md:w-64 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Loading State */}
@@ -129,9 +162,9 @@ export default function TagToursPage() {
         {/* Tours Grid */}
         {!loading && !error && (
           <>
-            {tours.length > 0 ? (
+            {filteredTours.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {tours.map((tour) => (
+                {filteredTours.map((tour) => (
                   <TourCard 
                     key={tour.id}
                     id={tour.id}
@@ -157,7 +190,7 @@ export default function TagToursPage() {
             ) : (
               <div className="text-center py-12">
                 <p className="text-lg text-gray-600 dark:text-gray-400">
-                  No tours found with this tag.
+                  {searchTerm ? "No tours match your search." : "No tours found with this tag."}
                 </p>
               </div>
             )}

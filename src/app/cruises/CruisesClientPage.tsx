@@ -1,28 +1,23 @@
+// app/cruises/CruisesClientComponent.tsx
 "use client";
 
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import CruiseCard from "@/components/Cruises/cruise_card";
-import { use, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
-interface CategoryDetails {
-  categoryID: string;
-  name: string;
-  slug: string;
-  description?: string;
-}
-
-interface Cruise {
+interface CruiseCardData {
   id: string;
   title: string;
   slug: string;
   description: string;
   imageURL: string;
-  categoryDetails: CategoryDetails;
+  categoryDetails: {
+    name: string;
+    slug: string;
+  };
   isFeatured?: boolean;
   numberofDays: number;
   numberofNights: number;
@@ -31,72 +26,55 @@ interface Cruise {
   status: string;
   location: string;
   cruiseType: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
-export default function CategoryCruisesPage() {
-  const { category: categorySlug } = useParams<{ category: string }>();
-  const [cruises, setCruises] = useState<Cruise[]>([]);
-  const [filteredCruises, setFilteredCruises] = useState<Cruise[]>([]);
+const CruisesClientComponent = () => {
+  const [cruises, setCruises] = useState<CruiseCardData[]>([]);
+  const [filteredCruises, setFilteredCruises] = useState<CruiseCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [categoryData, setCategoryData] = useState<CategoryDetails | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const fetchCategoryCruises = async () => {
+    const getCruisesData = async () => {
       try {
         setLoading(true);
+        const cruisesCollection = collection(db, 'cruises');
+        const querySnapshot = await getDocs(cruisesCollection);
         
-        // Get the category data first
-        const categoriesQuery = query(
-          collection(db, "categories"),
-          where("slug", "==", categorySlug)
-        );
-        
-        const categoriesSnapshot = await getDocs(categoriesQuery);
-        
-        if (categoriesSnapshot.empty) {
-          throw new Error("Category not found");
-        }
-        
-        const categoryDoc = categoriesSnapshot.docs[0];
-        setCategoryData({
-          categoryID: categoryDoc.id,
-          ...categoryDoc.data()
-        } as CategoryDetails);
+        const cruisesData = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title,
+            slug: data.slug,
+            description: data.description,
+            imageURL: data.imageURL,
+            categoryDetails: data.categoryDetails,
+            isFeatured: data.isFeatured || false,
+            numberofDays: data.numberofDays,
+            numberofNights: data.numberofNights,
+            price: data.price,
+            startDate: data.startDate,
+            status: data.status,
+            location: data.location,
+            cruiseType: data.cruiseType,
+          };
+        });
 
-        // Get cruises for this category
-        const cruisesQuery = query(
-          collection(db, "cruises"),
-          where("categoryDetails.slug", "==", categorySlug)
-        );
-        
-        const cruisesSnapshot = await getDocs(cruisesQuery);
-        const cruisesData = cruisesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          startDate: doc.data().startDate?.toDate().toISOString(),
-          createdAt: doc.data().createdAt?.toDate().toISOString(),
-          updatedAt: doc.data().updatedAt?.toDate().toISOString()
-        })) as Cruise[];
-        
         setCruises(cruisesData);
         setFilteredCruises(cruisesData);
         setError(null);
       } catch (err) {
-        console.error("Error fetching category cruises:", err);
-        setError("Failed to load cruises. Please try again later.");
+        console.error('Error fetching cruises:', err);
+        setError('Failed to load cruises. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    if (categorySlug) {
-      fetchCategoryCruises();
-    }
-  }, [categorySlug]);
+    getCruisesData();
+  }, []);
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
@@ -112,26 +90,31 @@ export default function CategoryCruisesPage() {
     }
   }, [searchTerm, cruises]);
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 mt-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="">
-          <Link href="/cruises" className="inline-flex items-center mt-2 text-blue-600 dark:text-blue-400 hover:underline">
-            <ArrowLeftIcon className="w-5 h-5 mr-2" />
-            Back to all cruises
-          </Link>
-        </div>
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-red-500 text-lg">{error}</div>
+        <Link 
+          href="/cruises"
+          className="ml-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Try Again
+        </Link>
+      </div>
+    );
+  }
 
+  return (
+    <div className="min-h-screen dark:bg-gray-900 py-12 mt-20 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div className="flex-1">
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              {categoryData?.name || "Loading..."} Cruises
+              Our Cruise Packages
             </h1>
-            {categoryData?.description && (
-              <p className="text-xl text-gray-600 dark:text-gray-300">
-                {categoryData.description}
-              </p>
-            )}
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              Discover amazing destinations with our curated cruise experiences
+            </p>
           </div>
           
           <div className="w-full md:w-auto">
@@ -153,33 +136,24 @@ export default function CategoryCruisesPage() {
         {loading && (
           <div className="text-center py-12">
             <p className="text-lg text-gray-600 dark:text-gray-400">
-              Loading cruises...
+              Loading cruise packages...
             </p>
           </div>
         )}
 
-        {error && (
-          <div className="text-center py-12">
-            <p className="text-lg text-red-500 dark:text-red-400">{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && (
+        {!loading && (
           <>
             {filteredCruises.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredCruises.map((cruise) => (
-                  <CruiseCard 
+                  <CruiseCard
                     key={cruise.id}
                     id={cruise.id}
                     title={cruise.title}
                     slug={cruise.slug}
                     description={cruise.description}
                     imageURL={cruise.imageURL}
-                    categoryDetails={{
-                      name: cruise.categoryDetails.name,
-                      slug: cruise.categoryDetails.slug
-                    }}
+                    categoryDetails={cruise.categoryDetails}
                     isFeatured={cruise.isFeatured}
                     numberofDays={cruise.numberofDays}
                     numberofNights={cruise.numberofNights}
@@ -194,7 +168,7 @@ export default function CategoryCruisesPage() {
             ) : (
               <div className="text-center py-12">
                 <p className="text-lg text-gray-600 dark:text-gray-400">
-                  {searchTerm ? "No cruises match your search." : "No cruises available in this category."}
+                  {searchTerm ? "No cruises match your search." : "No cruises available at the moment. Please check back later."}
                 </p>
               </div>
             )}
@@ -203,4 +177,6 @@ export default function CategoryCruisesPage() {
       </div>
     </div>
   );
-}
+};
+
+export default CruisesClientComponent;

@@ -1,9 +1,9 @@
 // app/tours/ToursClientComponent.tsx (Client Component)
 'use client';
 
-import { collection, getDocs  } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
-import TourCard from '@/components/Domestic/TourCard';
+import TourCard from './tour_card';
 import { useEffect, useState } from 'react';
 import { FiSearch, FiFilter, FiX, FiMapPin, FiGlobe, FiDollarSign, FiCalendar, FiSliders } from 'react-icons/fi';
 
@@ -19,8 +19,9 @@ interface Tour {
   };
   isFeatured: boolean;
   numberofDays: number;
-  numberofNights: number;
+  numberofNights: number; // Fixed typo from numberofNights to match TourCard
   price: number;
+  priceShow: boolean; // Added priceShow
   startDate: string;
   status: string;
   location: string;
@@ -63,6 +64,7 @@ export default function ToursClientComponent() {
             numberofDays: data.numberofDays || 0,
             numberofNights: data.numberofNights || 0,
             price: data.price || 0,
+            priceShow: data.priceShow !== undefined ? data.priceShow : true, // Handle priceShow with default true
             startDate: data.startDate || '',
             status: data.status || '',
             location: data.location || '',
@@ -138,30 +140,28 @@ export default function ToursClientComponent() {
   return (
     <div className="min-h-screen mt-16 dark:bg-gray-900 relative">
       <main className="container mx-auto py-12 px-4">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
+          <div className="order-1 md:order-none">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white">
               Our Tour Packages
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mt-2">
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mt-2">
               Check Our International and Domestic tours
             </p>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search tours..."
-                className="pl-10 pr-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <FiSearch className="absolute left-3 top-3 text-gray-400" />
-            </div>
-            
-    </div>
+          <div className="relative w-full md:w-auto order-2 md:order-none">
+            <input
+              type="text"
+              placeholder="Search tours..."
+              className="w-full pl-10 pr-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <FiSearch className="absolute left-3 top-3 text-gray-400" />
+          </div>
         </div>
+
         {loading ? (
           <div className="text-center py-12">
             <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -183,7 +183,11 @@ export default function ToursClientComponent() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredTours.map((tour) => (
-              <TourCard key={tour.id} {...tour} />
+              <TourCard 
+                key={tour.id} 
+                {...tour} 
+                numberofNights={tour.numberofNights} // Pass the correct property name
+              />
             ))}
           </div>
         )}

@@ -13,10 +13,10 @@ interface TourCardProps {
     slug: string;
   };
   isFeatured?: boolean;
-  priceShow?:boolean
   numberofDays: number;
   numberofNights: number;
   price: number;
+  priceShow: boolean; // New prop
   startDate: string;
   status: string;
   location: string;
@@ -34,7 +34,7 @@ const TourCard: React.FC<TourCardProps> = ({
   numberofDays,
   numberofNights,
   price,
-  priceShow=true,
+  priceShow = true, // Default to true for backward compatibility
   startDate,
   status,
   location,
@@ -56,8 +56,6 @@ const TourCard: React.FC<TourCardProps> = ({
     }
   };
 
-  
-
   return (
     <Link 
       href={`/tours/${categoryDetails.slug}/${slug}`} 
@@ -73,20 +71,17 @@ const TourCard: React.FC<TourCardProps> = ({
         w-full max-w-md mx-auto
       `}>
         {/* Image with badges */}
-        <div className="relative h-64 w-full"> {/* Increased height to h-64 */}
+        <div className="relative h-64 w-full">
           { imageURL && (
           <Image
             src={imageURL}
             alt={title}
-            width={600}  // Increased width
-            height={500} // Increased height
+            width={600}
+            height={500}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             priority={isFeatured}
-            
           />
           )}
-          {/* Featured badge */}
-          
           {/* Category badge */}
           <span className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow">
             {categoryDetails.name}
@@ -94,7 +89,7 @@ const TourCard: React.FC<TourCardProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-5 flex-1 flex flex-col"> {/* Increased padding to p-5 */}
+        <div className="p-5 flex-1 flex flex-col">
           {/* Title */}
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
             {title}
@@ -102,28 +97,26 @@ const TourCard: React.FC<TourCardProps> = ({
           
           {/* Description */}
           <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-1 mb-4 flex-1">
-  {description}
-</p>
+            {description}
+          </p>
           
           {/* Metadata */}
           <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 border-t border-black/10 pt-3">
             <div className="flex items-center">
-              <MapPinIcon className="w-5 h-5 mr-1.5" /> {/* Increased icon size */}
+              <MapPinIcon className="w-5 h-5 mr-1.5" />
               <span className="font-medium">{location}</span>
             </div>
             
             <div className="flex items-center">
-              <CalendarIcon className="w-5 h-5 mr-1.5" /> {/* Increased icon size */}
+              <CalendarIcon className="w-5 h-5 mr-1.5" />
               <span>{numberofDays}D/{numberofNights}N</span>
             </div>
             
-            <div className="text-lg font-bold text-blue-600 dark:text-blue-400"> {/* Increased text size */}
-              {priceShow && ( // Only show price if priceShow is true
+            {priceShow && ( // Only show price if priceShow is true
               <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                 ₹{price.toLocaleString('en-IN')}
               </div>
             )}
-            </div>
           </div>
         </div>
       </div>

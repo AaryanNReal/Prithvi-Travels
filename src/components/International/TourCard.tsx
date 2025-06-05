@@ -13,6 +13,7 @@ interface TourCardProps {
     slug: string;
   };
   isFeatured?: boolean;
+  priceShow?:boolean
   numberofDays: number;
   numberofNights: number;
   price: number;
@@ -33,6 +34,7 @@ const TourCard: React.FC<TourCardProps> = ({
   numberofDays,
   numberofNights,
   price,
+  priceShow=true,
   startDate,
   status,
   location,
@@ -54,7 +56,7 @@ const TourCard: React.FC<TourCardProps> = ({
     }
   };
 
-  const isPexelsImage = imageURL.includes('pexels.com');
+  
 
   return (
     <Link 
@@ -72,6 +74,7 @@ const TourCard: React.FC<TourCardProps> = ({
       `}>
         {/* Image with badges */}
         <div className="relative h-64 w-full"> {/* Increased height to h-64 */}
+          { imageURL && (
           <Image
             src={imageURL}
             alt={title}
@@ -79,7 +82,10 @@ const TourCard: React.FC<TourCardProps> = ({
             height={500} // Increased height
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             priority={isFeatured}
+            
           />
+          )}
+          {/* Featured badge */}
           
           {/* Category badge */}
           <span className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow">
@@ -95,9 +101,9 @@ const TourCard: React.FC<TourCardProps> = ({
           </h2>
           
           {/* Description */}
-          <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-1 mb-4 flex-1"> {/* Increased text size */}
-            {description}
-          </p>
+          <p className="text-gray-600 dark:text-gray-300 text-base line-clamp-1 mb-4 flex-1">
+  {description}
+</p>
           
           {/* Metadata */}
           <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 border-t border-black/10 pt-3">
@@ -112,7 +118,11 @@ const TourCard: React.FC<TourCardProps> = ({
             </div>
             
             <div className="text-lg font-bold text-blue-600 dark:text-blue-400"> {/* Increased text size */}
-              ₹{price.toLocaleString('en-IN')}
+              {priceShow && ( // Only show price if priceShow is true
+              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                ₹{price.toLocaleString('en-IN')}
+              </div>
+            )}
             </div>
           </div>
         </div>

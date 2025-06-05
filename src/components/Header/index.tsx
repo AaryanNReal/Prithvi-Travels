@@ -134,7 +134,7 @@ const Header = () => {
                 <Image
                   src="/images/logo/logo.png"
                   alt="Company Logo"
-                  width={140}
+                  width={135}
                   height={40}
                   priority
                   className="dark:hidden"
@@ -158,7 +158,7 @@ const Header = () => {
                   id="navbarToggler"
                   aria-label="Toggle Menu"
                   aria-expanded={navbarOpen}
-                  className="ring-primary absolute right-4 top-1/2 block -translate-y-1/2 rounded-lg px-3 py-1.5 focus:ring-2 lg:hidden"
+                  className="ring-primary absolute right-4 top-1/2 block -translate-y-1/2 rounded-lg px-1 py-1.5 focus:ring-2 lg:hidden"
                 >
                   <span className={`sr-only ${navbarOpen ? 'Close menu' : 'Open menu'}`} />
                   <span
@@ -188,14 +188,14 @@ const Header = () => {
                   }`}
                   aria-label="Main navigation"
                 >
-                  <ul className="block space-y-4 lg:flex lg:space-x-8 lg:space-y-0" ref={dropdownRef}>
+                  <ul className="block space-y-4 lg:flex lg:space-x-6 xl:space-x-6  sm:space-x-2 lg:space-y-1" ref={dropdownRef}>
                     {menuData.map((menuItem, index) => (
                       <li key={index} className="group relative">
                         {menuItem.path && !menuItem.submenu ? (
                           menuItem.isbutton ? (
                             <button
                               onClick={() => handleMenuItemClick(menuItem)}
-                              className="flex w-full items-center py-2 text-base text-gray-800 hover:text-primary dark:text-gray-300 dark:hover:text-white lg:px-0 lg:py-6"
+                              className="flex w-full items-center py-2 text-base text-gray-800 hover:text-primary dark:text-gray-300 dark:hover:text-white lg:px-0  lg:py-6"
                             >
                               {menuItem.title}
                             </button>
@@ -247,7 +247,7 @@ const Header = () => {
                                 <Link
                                   href={submenuItem.path}
                                   key={subIndex}
-                                  className="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                                  className="block px-4    py-2.5 text-sm text-gray-800 hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
                                   role="menuitem"
                                 >
                                   {submenuItem.title}
@@ -263,7 +263,7 @@ const Header = () => {
               </div>
 
               {/* Auth buttons */}
-              <div className="flex items-center justify-end space-x-4  lg:pr-0">
+              <div className="flex items-center justify-end space-x-4 mr-15 lg:pr-0">
                 {user ? (
                   <SignOutDropdown
                     items={[

@@ -1,31 +1,74 @@
 "use client";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useRef, useCallback } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "@/app/lib/firebase";
+import { onAuthStateChanged, signOut, getAuth } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from "@/app/lib/firebase";
 import menuData from "./menuData";
-import SignOutDropdown from "./signout";
 import ItineraryModal from "../ItineraryModal";
 
 const Header = () => {
   const pathname = usePathname();
   const dropdownRef = useRef<HTMLUListElement>(null);
   const headerRef = useRef<HTMLElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   // State management
   const [navbarOpen, setNavbarOpen] = useState(false);
   const [sticky, setSticky] = useState(false);
   const [openIndex, setOpenIndex] = useState(-1);
   const [user, setUser] = useState(null);
+  const [userName, setUserName] = useState("Account");
   const [modalOpen, setModalOpen] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+  // Fetch user data from Firebase
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        try {
+          const usersQuery = query(
+            collection(db, "users"),
+            where("uid", "==", currentUser.uid)
+          );
+          const querySnapshot = await getDocs(usersQuery);
+          if (!querySnapshot.empty) {
+            const data = querySnapshot.docs[0].data();
+            setUserName(data.name || currentUser.displayName || "Account");
+          } else {
+            setUserName(currentUser.displayName || "Account");
+          }
+        } catch (error) {
+          console.error("Error fetching user:", error);
+          setUserName("Account");
+        }
+      } else {
+        setUserName("Account");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Memoized handlers
   const toggleNavbar = useCallback(() => {
     setNavbarOpen(prev => !prev);
-  }, []);
+    if (!navbarOpen) {
+      setProfileDropdownOpen(false);
+    }
+  }, [navbarOpen]);
+
+  const toggleProfileDropdown = useCallback(() => {
+    setProfileDropdownOpen(prev => !prev);
+    if (!profileDropdownOpen) {
+      setNavbarOpen(false);
+    }
+  }, [profileDropdownOpen]);
 
   const handleSubmenu = useCallback((index: number) => {
     setOpenIndex(prev => prev === index ? -1 : index);
@@ -35,6 +78,7 @@ const Header = () => {
     try {
       await signOut(auth);
       console.log("✅ Signed out successfully");
+      setProfileDropdownOpen(false);
     } catch (error) {
       console.error("❌ Sign out error:", error);
     }
@@ -44,10 +88,8 @@ const Header = () => {
     if (item.onClick === 'openItineraryModal') {
       setModalOpen(true);
     }
-    if (navbarOpen) {
-      setNavbarOpen(false);
-    }
-  }, [navbarOpen]);
+    setNavbarOpen(false);
+  }, []);
 
   // Scroll effect with debounce
   useEffect(() => {
@@ -70,43 +112,29 @@ const Header = () => {
     };
   }, []);
 
-  // Auth state listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setOpenIndex(-1);
       }
+      if (mobileMenuRef.current && navbarOpen && !mobileMenuRef.current.contains(event.target as Node)) {
+        setNavbarOpen(false);
+      }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
     };
     
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [navbarOpen]);
 
   // Close mobile menu when route changes
   useEffect(() => {
     setNavbarOpen(false);
+    setOpenIndex(-1);
   }, [pathname]);
-
-  // Add/remove body overflow when mobile menu is open
-  useEffect(() => {
-    if (navbarOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [navbarOpen]);
 
   return (
     <>
@@ -120,89 +148,54 @@ const Header = () => {
             : 'absolute bg-transparent'
         }`}
       >
-        <div className="container mx-auto ">
-          <div className="relative flex items-center justify-between ">
-            {/* Logo */}
-            <div className="w-auto max-w-full xl:mr-5 ">
-              <Link
-                href="/"
-                className={`header-logo block w-full ${
-                  sticky ? "py-3 lg:py-2" : "py-6"
-                }`}
-                aria-label="Home"
-              >
-                <Image
-                  src="/images/logo/logo.png"
-                  alt="Company Logo"
-                  width={135}
-                  height={40}
-                  priority
-                  className="dark:hidden"
-                />
-                <Image
-                  src="/images/logo/logo-dark.png"
-                  alt="Company Logo"
-                  width={150}
-                  height={40}
-                  className="hidden dark:block"
-                />
-              </Link>
-            </div>
-
-            {/* Navigation */}
-            <div className="flex w-full ml-3 items-center justify-between font-semibold">
-              <div className="flex-1">
-                {/* Mobile menu button */}
-                <button
-                  onClick={toggleNavbar}
-                  id="navbarToggler"
-                  aria-label="Toggle Menu"
-                  aria-expanded={navbarOpen}
-                  className="ring-primary absolute right-4 top-1/2 block -translate-y-1/2 rounded-lg px-1 py-1.5 focus:ring-2 lg:hidden"
-                >
-                  <span className={`sr-only ${navbarOpen ? 'Close menu' : 'Open menu'}`} />
-                  <span
-                    className={`relative my-1.5 block h-0.5 w-7 bg-black transition-all duration-300 dark:bg-white ${
-                      navbarOpen ? "top-2 rotate-45" : ""
-                    }`}
-                  />
-                  <span
-                    className={`relative my-1.5 block h-0.5 w-7 bg-black transition-all duration-300 dark:bg-white ${
-                      navbarOpen ? "opacity-0" : ""
-                    }`}
-                  />
-                  <span
-                    className={`relative my-1.5 block h-0.5 w-7 bg-black transition-all duration-300 dark:bg-white ${
-                      navbarOpen ? "-top-2 -rotate-45" : ""
-                    }`}
-                  />
-                </button>
-
-                {/* Navigation menu */}
-                <nav
-                  id="navbarCollapse"
-                  className={`navbar absolute right-0 top-full z-30 w-64 rounded-lg border border-gray-200 bg-white px-6 py-4 shadow-lg transition-all duration-300 dark:border-gray-700 dark:bg-gray-800 lg:static lg:flex lg:w-auto lg:border-none lg:bg-transparent lg:p-0 lg:shadow-none lg:dark:bg-transparent ${
-                    navbarOpen
-                      ? "visible opacity-100"
-                      : "invisible opacity-0 lg:visible lg:opacity-100"
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="relative flex items-center justify-between py-3">
+            <div className="flex items-center space-x-8">
+              {/* Logo */}
+              <div className="w-auto max-w-full">
+                <Link
+                  href="/"
+                  className={`header-logo block w-full ${
+                    sticky ? "py-2 lg:py-1" : "py-4"
                   }`}
-                  aria-label="Main navigation"
+                  aria-label="Home"
                 >
-                  <ul className="block space-y-4 lg:flex lg:space-x-6 xl:space-x-6  sm:space-x-2 lg:space-y-1" ref={dropdownRef}>
+                  <Image
+                    src="/images/logo/logo.png"
+                    alt="Company Logo"
+                    width={135}
+                    height={40}
+                    priority
+                    className="dark:hidden"
+                  />
+                  <Image
+                    src="/images/logo/logo-dark.png"
+                    alt="Company Logo"
+                    width={150}
+                    height={40}
+                    className="hidden dark:block"
+                  />
+                </Link>
+              </div>
+
+              {/* Desktop Navigation */}
+              <div className="hidden lg:flex lg:items-center">
+                <nav className="flex">
+                  <ul className="flex space-x-6" ref={dropdownRef}>
                     {menuData.map((menuItem, index) => (
                       <li key={index} className="group relative">
                         {menuItem.path && !menuItem.submenu ? (
                           menuItem.isbutton ? (
                             <button
                               onClick={() => handleMenuItemClick(menuItem)}
-                              className="flex w-full items-center py-2 text-base text-gray-800 hover:text-primary dark:text-gray-300 dark:hover:text-white lg:px-0  lg:py-6"
+                              className="flex items-center py-6 text-base text-gray-800 hover:text-primary dark:text-gray-300 dark:hover:text-white px-0"
                             >
                               {menuItem.title}
                             </button>
                           ) : (
                             <Link
                               href={menuItem.path}
-                              className={`flex items-center py-2 text-base lg:px-0 lg:py-6 ${
+                              className={`flex items-center py-6 text-base px-0 ${
                                 pathname === menuItem.path
                                   ? "text-primary dark:text-white"
                                   : "text-gray-800 hover:text-primary dark:text-gray-300 dark:hover:text-white"
@@ -216,16 +209,16 @@ const Header = () => {
                           <>
                             <button
                               onClick={() => handleSubmenu(index)}
-                              className="group flex w-full items-center justify-between py-2 text-base text-gray-800 hover:text-primary dark:text-gray-300 dark:hover:text-white lg:px-0 lg:py-6"
+                              className="group flex items-center justify-between py-6 text-base text-gray-800 hover:text-primary dark:text-gray-300 dark:hover:text-white px-0"
                               aria-expanded={openIndex === index}
                               aria-haspopup="true"
                             >
                               {menuItem.title}
                               <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 20 20"
-                                className={`ml-2 transform transition-transform ${
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                className={`ml-1 transform transition-transform ${
                                   openIndex === index ? "rotate-180" : ""
                                 }`}
                                 fill="currentColor"
@@ -233,13 +226,13 @@ const Header = () => {
                                 <path
                                   fillRule="evenodd"
                                   clipRule="evenodd"
-                                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  d="M4.293 5.293a1 1 0 011.414 0L8 7.586l2.293-2.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
                                 />
                               </svg>
                             </button>
                             <div
-                              className={`submenu absolute left-0 top-full mt-2 w-56 rounded-lg bg-white shadow-lg transition-all duration-300 dark:bg-gray-800 lg:invisible lg:opacity-0 lg:group-hover:visible lg:group-hover:opacity-100 ${
-                                openIndex === index ? "block" : "hidden"
+                              className={`absolute left-0 top-full mt-2 w-56 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 transition-all duration-200 dark:bg-gray-800 ${
+                                openIndex === index ? "scale-100 opacity-100" : "scale-95 opacity-0 invisible"
                               }`}
                               role="menu"
                             >
@@ -247,7 +240,7 @@ const Header = () => {
                                 <Link
                                   href={submenuItem.path}
                                   key={subIndex}
-                                  className="block px-4    py-2.5 text-sm text-gray-800 hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                                  className="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
                                   role="menuitem"
                                 >
                                   {submenuItem.title}
@@ -261,36 +254,235 @@ const Header = () => {
                   </ul>
                 </nav>
               </div>
-
-              {/* Auth buttons */}
-              <div className="flex items-center justify-end space-x-4 mr-15 lg:pr-0">
-                {user ? (
-                  <SignOutDropdown
-                    items={[
-                      { label: "Profile", href: "/profile" },
-                      { label: "My Bookings", href: "/mybooking" },
-                      { label: "Help Desk", href: "/helpdesk" },
-                      { label: "Sign Out", onClick: handleSignOut },
-                    ]}
-                  />
-                ) : (
-                  <>
-                    <Link
-                      href="/signin"
-                      className="rounded-md px-4 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white md:text-base"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      href="/signup"
-                      className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800 md:text-base"
-                    >
-                      Sign Up
-                    </Link>
-                  </>
-                )}
-              </div>
             </div>
+
+            {/* Desktop Auth buttons */}
+            <div className="hidden lg:flex items-center space-x-4">
+              {user ? (
+                <div className="relative" ref={profileDropdownRef}>
+                  <button
+                    onClick={toggleProfileDropdown}
+                    className="flex items-center space-x-1 rounded-md px-4 py-2 text-base font-medium text-gray-800 hover:text-primary dark:text-gray-300 dark:hover:text-white"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6 mr-2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0Z" />
+                    </svg>
+                    <span>{userName}</span>
+                  </button>
+                  {profileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800">
+                      <Link
+                        href="/profile"
+                        className="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        href="/mybooking"
+                        className="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        My Bookings
+                      </Link>
+                      <Link
+                        href="/helpdesk"
+                        className="block px-4 py-2.5 text-sm text-gray-800 hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        Help Desk
+                      </Link>
+                      <button
+                        onClick={handleSignOut}
+                        className="block w-full px-4 py-2.5 text-left text-sm text-gray-800 hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <Link
+                    href="/signin"
+                    className="rounded-md px-4 py-2 text-base font-medium text-gray-800 transition-colors hover:bg-gray-100 hover:text-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="rounded-md bg-primary px-4 py-2 text-base font-medium text-white shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* Mobile menu buttons */}
+            <div className="flex lg:hidden">
+              {/* Profile dropdown button for mobile */}
+              {user && (
+                <div className="relative mr-3" ref={profileDropdownRef}>
+                  <button
+                    onClick={toggleProfileDropdown}
+                    className="flex items-center justify-center rounded-full p-2 text-gray-800 focus:outline-none dark:text-gray-300"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0Z" />
+                    </svg>
+                  </button>
+                  {profileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800">
+                      <Link
+                        href="/profile"
+                        className="block px-4 py-2.5 text-sm text-gray-800 dark:text-gray-300"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        href="/mybooking"
+                        className="block px-4 py-2.5 text-sm text-gray-800 dark:text-gray-300"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        My Bookings
+                      </Link>
+                      <Link
+                        href="/helpdesk"
+                        className="block px-4 py-2.5 text-sm text-gray-800 dark:text-gray-300"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        Help Desk
+                      </Link>
+                      <button
+                        onClick={handleSignOut}
+                        className="block w-full px-4 py-2.5 text-left text-sm text-gray-800 dark:text-gray-300"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Main menu button */}
+              <button
+                onClick={toggleNavbar}
+                id="navbarToggler"
+                aria-label="Toggle Menu"
+                aria-expanded={navbarOpen}
+                className="inline-flex items-center justify-center rounded-md p-2 text-gray-800 focus:outline-none dark:text-gray-300"
+              >
+                <span className="sr-only">Menu</span>
+                <svg
+                  className={`h-6 w-6 transition-transform ${navbarOpen ? 'rotate-90' : ''}`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation - separate from profile dropdown */}
+        <div
+          ref={mobileMenuRef}
+          className={`lg:hidden fixed right-0 z-40 bg-white dark:bg-gray-800 transition-all duration-300 ease-in-out transform ${
+            navbarOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+          style={{
+            top: sticky ? '64px' : '80px',
+            height: 'auto',
+            maxHeight: 'calc(100vh - 80px)',
+            width: '200px',
+            borderLeft: '1px solid rgba(0,0,0,0.1)',
+            boxShadow: '-2px 0 10px rgba(0,0,0,0.1)'
+          }}
+        >
+          <div className="h-full overflow-y-auto px-3 py-3">
+            <nav className="flex flex-col space-y-2">
+              <ul className="space-y-2">
+                {menuData.map((menuItem, index) => (
+                  <li 
+                    key={index} 
+                    className="border-b border-gray-200 dark:border-gray-700 pb-1"
+                    onMouseEnter={() => menuItem.submenu && setOpenIndex(index)}
+                    onMouseLeave={() => menuItem.submenu && setOpenIndex(-1)}
+                  >
+                    {menuItem.path && !menuItem.submenu ? (
+                      menuItem.isbutton ? (
+                        <button
+                          onClick={() => handleMenuItemClick(menuItem)}
+                          className="w-full text-left py-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+                        >
+                          {menuItem.title}
+                        </button>
+                      ) : (
+                        <Link
+                          href={menuItem.path}
+                          className={`block py-2 text-sm font-medium ${
+                            pathname === menuItem.path
+                              ? "text-primary dark:text-white"
+                              : "text-gray-800 dark:text-gray-300"
+                          }`}
+                          aria-current={pathname === menuItem.path ? "page" : undefined}
+                        >
+                          {menuItem.title}
+                        </Link>
+                      )
+                    ) : menuItem.submenu ? (
+                      <div className="relative">
+                        <button
+                          onClick={() => handleSubmenu(index)}
+                          className="flex w-full items-center justify-between py-2 text-sm font-medium text-gray-800 dark:text-gray-300"
+                          aria-expanded={openIndex === index}
+                        >
+                          <span>{menuItem.title}</span>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 20 20"
+                            className={`ml-1 transform transition-transform ${
+                              openIndex === index ? "rotate-180" : ""
+                            }`}
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              clipRule="evenodd"
+                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            />
+                          </svg>
+                        </button>
+                        {openIndex === index && (
+                          <div className="pl-3 space-y-1 mt-1">
+                            {menuItem.submenu.map((submenuItem, subIndex) => (
+                              <Link
+                                href={submenuItem.path}
+                                key={subIndex}
+                                className="block py-1 text-xs text-gray-800 dark:text-gray-300"
+                                onClick={() => {
+                                  setNavbarOpen(false);
+                                  setOpenIndex(-1);
+                                }}
+                              >
+                                {submenuItem.title}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
         </div>
       </header>

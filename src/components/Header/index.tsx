@@ -179,7 +179,7 @@ const Header = () => {
               </div>
 
               {/* Desktop Navigation */}
-              <div className="hidden lg:flex lg:items-center">
+              <div className="hidden xl:flex xl:items-center">
                 <nav className="flex">
                   <ul className="flex space-x-6" ref={dropdownRef}>
                     {menuData.map((menuItem, index) => (
@@ -257,7 +257,7 @@ const Header = () => {
             </div>
 
             {/* Desktop Auth buttons */}
-            <div className="hidden lg:flex items-center space-x-4">
+            <div className="hidden xl:flex items-center space-x-4">
               {user ? (
                 <div className="relative" ref={profileDropdownRef}>
                   <button
@@ -319,8 +319,8 @@ const Header = () => {
               )}
             </div>
 
-            {/* Mobile menu buttons */}
-            <div className="flex lg:hidden">
+            {/* Mobile menu buttons - visible below xl breakpoint (1280px) */}
+            <div className="flex xl:hidden">
               {/* Profile dropdown button for mobile */}
               {user && (
                 <div className="relative mr-3" ref={profileDropdownRef}>
@@ -390,10 +390,10 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation - separate from profile dropdown */}
+        {/* Mobile Navigation - visible below xl breakpoint (1280px) */}
         <div
           ref={mobileMenuRef}
-          className={`lg:hidden fixed right-0 z-40 bg-white dark:bg-gray-800 transition-all duration-300 ease-in-out transform ${
+          className={`xl:hidden fixed right-0 z-40 bg-white dark:bg-gray-800 transition-all duration-300 ease-in-out transform ${
             navbarOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
           style={{
@@ -492,5 +492,5 @@ const Header = () => {
     </>
   );
 };
-
+ 
 export default Header;

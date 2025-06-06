@@ -112,7 +112,7 @@ const TourCard: React.FC<TourCardProps> = ({
           </p>
           
           {/* Metadata */}
-          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 border-t border-black/10 pt-3">
+          <div className="flex items-center justify-between  text-gray-500 dark:text-gray-400 border-t border-black/10 pt-3">
             <div className="flex items-center">
               <MapPinIcon className="w-5 h-5 mr-1.5" />
               <span className="line-clamp-1">{location}</span>

@@ -379,8 +379,8 @@ export default function FeaturedDomesticTours() {
         {isModalOpen && selectedTour && (
           <div className="fixed inset-0 z-40 flex items-center justify-center  bg-black  ">
             <div className="w-full max-w-md bg-white rounded-lg shadow-xl">
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
+              <div className="p-3">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="text font-bold text-gray-800">
                     Enquire About {selectedTour.title}
                   </h3>
@@ -389,7 +389,7 @@ export default function FeaturedDomesticTours() {
                     className="text-gray-500 hover:text-gray-700"
                     aria-label="Close modal"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>

@@ -132,7 +132,7 @@ const TourCard: React.FC<TourCardProps> = ({
             {!priceShow && (
           <button
             onClick={handleEnquireClick}
-            className=" bg-blue-600 text-white py-1 px-2 rounded hover:bg-blue-700 transition font-medium"
+            className="text-blue-500 hover:text-blue-800 cursor-pointer"
           >
             Enquire Now
 
